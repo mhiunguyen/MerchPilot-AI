@@ -7,6 +7,10 @@ benchmarks marketplace listings within their local market context, creates a
 transparent opportunity score, and explains which products should be protected,
 tested, reviewed, maintained, or deprioritized.
 
+The interface supports English and Vietnamese. English remains the default for
+competition judging; users can switch language from the sidebar without losing
+their current workflow context.
+
 ## Live links
 
 - App: https://skunivo.streamlit.app/

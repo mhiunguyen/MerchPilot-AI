@@ -45,6 +45,7 @@ from app_components.filters import (
     safe_range,
     sort_products,
 )
+from app_components.i18n import translate
 from app_components.recommendation_ui import (
     COMPONENT_LABELS,
     GUIDANCE,
@@ -97,6 +98,10 @@ PAGES = [
     "User Feedback",
 ]
 
+
+def t(text: str) -> str:
+    return translate(text, st.session_state.get("language", "en"))
+
 BOUNDARY = (
     "This prototype prioritizes products using observed marketplace signals. "
     "It does not estimate causal promotion lift or forecast transactional demand "
@@ -116,7 +121,7 @@ PAGE_SUBTITLES = {
 
 def navigate(page: str) -> None:
     st.session_state.active_page = page
-    st.session_state.nav_radio = page
+    st.session_state.nav_radio = t(page)
 
 
 def open_product_explanation(product_key: str) -> None:
@@ -130,16 +135,20 @@ def open_decision_log(product_key: str) -> None:
 
 
 def sync_navigation() -> None:
-    st.session_state.active_page = st.session_state.nav_radio
+    page_by_label = {t(page): page for page in PAGES}
+    st.session_state.active_page = page_by_label.get(
+        st.session_state.nav_radio,
+        st.session_state.active_page,
+    )
 
 
 def page_header(title: str) -> None:
     st.markdown(
         f"""
         <div class="mp-page-head">
-          <span class="mp-kicker">SKUNIVO · DECISION SUPPORT</span>
-          <h1>{html.escape(title)}</h1>
-          <p>{html.escape(PAGE_SUBTITLES[title])}</p>
+          <span class="mp-kicker">{html.escape(t("SKUNIVO · DECISION SUPPORT"))}</span>
+          <h1>{html.escape(t(title))}</h1>
+          <p>{html.escape(t(PAGE_SUBTITLES[title]))}</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -147,21 +156,21 @@ def page_header(title: str) -> None:
 
 
 def section_header(title: str, copy: str = "") -> None:
-    st.markdown(f'<h2 class="mp-section-title">{html.escape(title)}</h2>', unsafe_allow_html=True)
+    st.markdown(f'<h2 class="mp-section-title">{html.escape(t(title))}</h2>', unsafe_allow_html=True)
     if copy:
-        st.markdown(f'<p class="mp-section-copy">{html.escape(copy)}</p>', unsafe_allow_html=True)
+        st.markdown(f'<p class="mp-section-copy">{html.escape(t(copy))}</p>', unsafe_allow_html=True)
 
 
 def render_boundary() -> None:
-    st.markdown(f'<div class="mp-boundary">{html.escape(BOUNDARY)}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="mp-boundary">{html.escape(t(BOUNDARY))}</div>', unsafe_allow_html=True)
 
 
 def render_footer() -> None:
     st.markdown(
-        """
+        f"""
         <div class="mp-footer">
           <strong>SKUNIVO</strong> · Built by Team YOUNGHTT<br>
-          Human review remains part of every decision. Scores are peer-relative and use precomputed marketplace signals.
+          {html.escape(t("Human review remains part of every decision. Scores are peer-relative and use precomputed marketplace signals."))}
         </div>
         """,
         unsafe_allow_html=True,
@@ -182,13 +191,13 @@ def format_number(value, digits: int = 0) -> str:
 
 def bool_label(value) -> str:
     if value is None or pd.isna(value):
-        return "Not available"
-    return "Yes" if bool(value) else "No"
+        return t("Not available")
+    return t("Yes") if bool(value) else t("No")
 
 
 def metric_cards(items: list[tuple[str, str]]) -> None:
     markup = "".join(
-        f'<div class="mp-metric"><strong>{html.escape(value)}</strong><span>{html.escape(label)}</span></div>'
+        f'<div class="mp-metric"><strong>{html.escape(value)}</strong><span>{html.escape(t(label))}</span></div>'
         for label, value in items
     )
     st.markdown(f'<div class="mp-metric-grid">{markup}</div>', unsafe_allow_html=True)
@@ -213,9 +222,9 @@ def start_demo_guide() -> None:
 
 
 def demo_guide_panel() -> None:
-    with st.sidebar.expander("Demo Guide · 4 steps", expanded=False):
+    with st.sidebar.expander(t("Demo Guide · 4 steps"), expanded=False):
         if not st.session_state.get("demo_guide_started", False):
-            st.caption("Start from Home. Progress updates automatically in this browser session.")
+            st.caption(t("Start from Home. Progress updates automatically in this browser session."))
         completed = sum(
             bool(st.session_state.get(key, False))
             for key, _ in DEMO_STEPS
@@ -223,14 +232,14 @@ def demo_guide_panel() -> None:
         st.progress(completed / len(DEMO_STEPS))
         for key, label in DEMO_STEPS:
             icon = "✓" if st.session_state.get(key, False) else "○"
-            st.caption(f"{icon} {label}")
+            st.caption(f"{icon} {t(label)}")
 
 
 def render_shell() -> None:
     if "active_page" not in st.session_state:
         st.session_state.active_page = "Home"
-    if "nav_radio" not in st.session_state:
-        st.session_state.nav_radio = st.session_state.active_page
+    if "language" not in st.session_state:
+        st.session_state.language = "en"
 
     with st.sidebar:
         sidebar_logo = image_data_uri(LOGO_ON_DARK)
@@ -239,20 +248,31 @@ def render_shell() -> None:
             <div class="mp-brand-lockup">
               <img class="mp-brand-wordmark" src="{sidebar_logo}" alt="SKUNIVO">
             </div>
-            <div class="mp-brand-sub">Explainable e-commerce decision intelligence</div>
+            <div class="mp-brand-sub">{html.escape(t("Explainable e-commerce decision intelligence"))}</div>
             """,
             unsafe_allow_html=True,
         )
+        st.segmented_control(
+            t("Language"),
+            ["en", "vi"],
+            key="language",
+            format_func=lambda value: "English" if value == "en" else "Tiếng Việt",
+            selection_mode="single",
+        )
+        translated_pages = [t(page) for page in PAGES]
+        expected_nav_label = t(st.session_state.active_page)
+        if st.session_state.get("nav_radio") not in translated_pages:
+            st.session_state.nav_radio = expected_nav_label
         st.radio(
-            "Navigate",
-            PAGES,
+            t("Navigate"),
+            translated_pages,
             key="nav_radio",
             on_change=sync_navigation,
             label_visibility="collapsed",
         )
         st.divider()
         demo_guide_panel()
-        st.caption("Decision-support prototype · Precomputed outputs only")
+        st.caption(t("Decision-support prototype · Precomputed outputs only"))
 
 
 def home_page(products: pd.DataFrame) -> None:
@@ -262,11 +282,9 @@ def home_page(products: pd.DataFrame) -> None:
         f"""
         <div class="mp-hero">
           <img class="mp-hero-mark" src="{hero_logo}" alt="" aria-hidden="true">
-          <div class="mp-eyebrow">AI DECISION COPILOT FOR E-COMMERCE</div>
-          <h1>Turn marketplace signals into <span class="mp-accent">explainable</span> product decisions.</h1>
-          <p>SKUNIVO benchmarks each product against comparable listings in its local market,
-          assigns a transparent opportunity score, and explains which products should be protected,
-          tested, reviewed, maintained, or deprioritized.</p>
+          <div class="mp-eyebrow">{html.escape(t("AI DECISION COPILOT FOR E-COMMERCE"))}</div>
+          <h1>{html.escape(t("Turn marketplace signals into explainable product decisions."))}</h1>
+          <p>{html.escape(t("SKUNIVO benchmarks each product against comparable listings in its local market, assigns a transparent opportunity score, and explains which products should be protected, tested, reviewed, maintained, or deprioritized."))}</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -274,7 +292,7 @@ def home_page(products: pd.DataFrame) -> None:
     cta_left, cta_right, _ = st.columns([1.1, 1, 3])
     with cta_left:
         st.button(
-            "Launch Decision Copilot →",
+            t("Launch Decision Copilot →"),
             type="primary",
             width="stretch",
             on_click=navigate,
@@ -282,7 +300,7 @@ def home_page(products: pd.DataFrame) -> None:
         )
     with cta_right:
         st.button(
-            "View Methodology",
+            t("View Methodology"),
             width="stretch",
             on_click=navigate,
             args=("Methodology and Transparency",),
@@ -297,11 +315,11 @@ def home_page(products: pd.DataFrame) -> None:
         ]
     )
     st.markdown(
-        """
+        f"""
         <div class="mp-workflow">
-          <div class="mp-step">Benchmark</div><div class="mp-step">Score</div>
-          <div class="mp-step">Explain</div><div class="mp-step">Review</div>
-          <div class="mp-step">Test</div>
+          <div class="mp-step">{html.escape(t("Benchmark"))}</div><div class="mp-step">{html.escape(t("Score"))}</div>
+          <div class="mp-step">{html.escape(t("Explain"))}</div><div class="mp-step">{html.escape(t("Review"))}</div>
+          <div class="mp-step">{html.escape(t("Test"))}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -321,7 +339,7 @@ def home_page(products: pd.DataFrame) -> None:
         st.markdown(
             f"""
             <div class="mp-preview">
-              <span class="mp-kicker">LIVE RECOMMENDATION PREVIEW</span>
+              <span class="mp-kicker">{html.escape(t("LIVE RECOMMENDATION PREVIEW"))}</span>
               <h3>{html.escape(str(top_product["product_name"]))}</h3>
               <p><span class="{country_class}">{html.escape(str(top_product["country_name"]))}</span>
               · {html.escape(str(top_product["shop_name"]))}</p><br>
@@ -336,13 +354,11 @@ def home_page(products: pd.DataFrame) -> None:
         )
     with right:
         st.markdown(
-            """
+            f"""
             <div class="mp-card mp-dark-card">
-              <span class="mp-kicker" style="color:#c9ff4a">THE OPERATING IDEA</span>
-              <h3>From signal overload to a review queue</h3>
-              <p>The transparent score is paired with a shop-grouped, cross-validated contextual
-              benchmark. The recommendation layer translates both into a review category and
-              auditable reasons. A merchandiser—not the system—decides what happens next.</p>
+              <span class="mp-kicker" style="color:#c9ff4a">{html.escape(t("THE OPERATING IDEA"))}</span>
+              <h3>{html.escape(t("From signal overload to a review queue"))}</h3>
+              <p>{html.escape(t("The transparent score is paired with a shop-grouped, cross-validated contextual benchmark. The recommendation layer translates both into a review category and auditable reasons. A merchandiser—not the system—decides what happens next."))}</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -373,7 +389,7 @@ def home_page(products: pd.DataFrame) -> None:
                 f"""
                 <div class="mp-card">
                   <span class="mp-kicker">{number}</span>
-                  <h3>{html.escape(title)}</h3><p>{html.escape(copy)}</p>
+                  <h3>{html.escape(t(title))}</h3><p>{html.escape(t(copy))}</p>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -381,12 +397,12 @@ def home_page(products: pd.DataFrame) -> None:
 
     section_header("What the system does not do")
     st.markdown(
-        """
+        f"""
         <div class="mp-card">
-          <span class="mp-badge">No demand forecast</span>
-          <span class="mp-badge">No causal promotion claim</span>
-          <span class="mp-badge">No profit optimization</span>
-          <span class="mp-badge">No automatic action execution</span>
+          <span class="mp-badge">{html.escape(t("No demand forecast"))}</span>
+          <span class="mp-badge">{html.escape(t("No causal promotion claim"))}</span>
+          <span class="mp-badge">{html.escape(t("No profit optimization"))}</span>
+          <span class="mp-badge">{html.escape(t("No automatic action execution"))}</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -398,7 +414,7 @@ def home_page(products: pd.DataFrame) -> None:
         "A four-step walkthrough for judges and test users. Progress updates automatically in this browser session.",
     )
     st.button(
-        "Start Demo Guide",
+        t("Start Demo Guide"),
         type="primary",
         disabled=st.session_state.get("demo_guide_started", False),
         on_click=start_demo_guide,
@@ -406,25 +422,24 @@ def home_page(products: pd.DataFrame) -> None:
     if st.session_state.get("demo_guide_started", False):
         for index, (key, label) in enumerate(DEMO_STEPS, start=1):
             icon = "✓" if st.session_state.get(key, False) else "○"
-            st.markdown(f"**{icon} Step {index}:** {label}")
+            st.markdown(f"**{icon} {t('Step')} {index}:** {t(label)}")
 
 
 def executive_page(products: pd.DataFrame, charts: dict[str, Path]) -> None:
     page_header("Executive Overview")
     market = st.segmented_control(
-        "Market view",
+        t("Market view"),
         ["All markets", "Indonesia", "Vietnam"],
         default="All markets",
         selection_mode="single",
+        format_func=t,
     )
     market = market or "All markets"
     code = {"Indonesia": "id", "Vietnam": "vn"}.get(market)
     view = products if code is None else products[products["country_code"].eq(code)]
 
     if market == "All markets":
-        st.info(
-            "All-market view uses counts and normalized scores only. Raw IDR and VND prices are not combined or compared."
-        )
+        st.info(t("All-market view uses counts and normalized scores only. Raw IDR and VND prices are not combined or compared."))
 
     kpi_cols = st.columns(6)
     kpis = [
@@ -436,7 +451,7 @@ def executive_page(products: pd.DataFrame, charts: dict[str, Path]) -> None:
         ("Active review", f"{active_review_count(view):,}"),
     ]
     for column, (label, value) in zip(kpi_cols, kpis):
-        column.metric(label, value)
+        column.metric(t(label), value)
 
     section_header("Portfolio shape", "Normalized opportunity scores and recommendation mix for the selected view.")
     chart_left, chart_right = st.columns(2)
@@ -487,7 +502,7 @@ def executive_page(products: pd.DataFrame, charts: dict[str, Path]) -> None:
 
     table_left, table_right = st.columns(2)
     with table_left:
-        st.markdown("#### Recommendation share")
+        st.markdown(f"#### {t('Recommendation share')}")
         mix = recommendation_mix(view)
         mix["Share of listings"] = mix["Share"].map(lambda x: f"{x:.1%}")
         st.dataframe(
@@ -496,7 +511,7 @@ def executive_page(products: pd.DataFrame, charts: dict[str, Path]) -> None:
             width="stretch",
         )
     with table_right:
-        st.markdown("#### Score-band summary")
+        st.markdown(f"#### {t('Score-band summary')}")
         st.dataframe(score_band_summary(view), hide_index=True, width="stretch")
 
     section_header("Top opportunity products by market")
@@ -535,11 +550,11 @@ def _multiselect_all(label: str, options: list, key: str) -> list:
 def prioritization_page(products: pd.DataFrame) -> None:
     mark_demo_step("demo_step_prioritization")
     page_header("Product Prioritization")
-    st.caption("Open the filter panel to define a market-specific review context.")
+    st.caption(t("Open the filter panel to define a market-specific review context."))
 
-    with st.expander("Filter decision queue", expanded=True):
+    with st.expander(t("Filter decision queue"), expanded=True):
         countries = _multiselect_all(
-            "Country",
+            t("Country"),
             ["id", "vn"],
             "filter_countries",
         )
@@ -547,17 +562,17 @@ def prioritization_page(products: pd.DataFrame) -> None:
 
         row1 = st.columns(3)
         shops = row1[0].multiselect(
-            "Shop",
+            t("Shop"),
             sorted(scoped["shop_name"].dropna().astype(str).unique()),
             key="filter_shops",
         )
         platform_categories = row1[1].multiselect(
-            "Platform category",
+            t("Platform category"),
             sorted(scoped["platform_category"].dropna().astype(str).unique()),
             key="filter_platform_categories",
         )
         shop_categories = row1[2].multiselect(
-            "Shop category",
+            t("Shop category"),
             sorted(scoped["shop_category"].dropna().astype(str).unique())
             if "shop_category" in scoped
             else [],
@@ -566,26 +581,26 @@ def prioritization_page(products: pd.DataFrame) -> None:
 
         row2 = st.columns(3)
         recommendation_labels = row2[0].multiselect(
-            "Recommendation",
+            t("Recommendation"),
             sorted(scoped["recommendation_label"].dropna().astype(str).unique()),
             key="filter_recommendations",
         )
         confidence_levels = row2[1].multiselect(
-            "Confidence",
+            t("Confidence"),
             ["High", "Medium", "Low"],
             key="filter_confidence",
         )
         promoted_status = row2[2].selectbox(
-            "Promoted status", ["All", "Yes", "No"], key="filter_promoted"
+            t("Promoted status"), ["All", "Yes", "No"], key="filter_promoted"
         )
         official_status = row2[2].selectbox(
-            "Official-shop status", ["All", "Yes", "No"], key="filter_official"
+            t("Official-shop status"), ["All", "Yes", "No"], key="filter_official"
         )
 
         row3 = st.columns(4)
         score_min, score_max = safe_range(scoped["opportunity_score"], (0.0, 100.0))
         score_range = row3[0].slider(
-            "Opportunity score",
+            t("Opportunity score"),
             0.0,
             100.0,
             (
@@ -599,7 +614,7 @@ def prioritization_page(products: pd.DataFrame) -> None:
         discount_floor = float(math.floor(discount_min))
         discount_ceiling = float(max(math.ceil(discount_max), math.floor(discount_min) + 1))
         discount_range = row3[1].slider(
-            "Discount percent",
+            t("Discount percent"),
             discount_floor,
             discount_ceiling,
             (discount_floor, discount_ceiling),
@@ -610,7 +625,7 @@ def prioritization_page(products: pd.DataFrame) -> None:
         likes_floor = int(likes_min)
         likes_ceiling = max(int(likes_max), likes_floor + 1)
         likes_range = row3[2].slider(
-            "Likes",
+            t("Likes"),
             likes_floor,
             likes_ceiling,
             (likes_floor, likes_ceiling),
@@ -620,7 +635,7 @@ def prioritization_page(products: pd.DataFrame) -> None:
         rating_floor = int(rating_min)
         rating_ceiling = max(int(rating_max), rating_floor + 1)
         rating_range = row3[3].slider(
-            "Rating count",
+            t("Ratings"),
             rating_floor,
             rating_ceiling,
             (rating_floor, rating_ceiling),
@@ -638,7 +653,7 @@ def prioritization_page(products: pd.DataFrame) -> None:
                 key=f"filter_price_{countries[0]}",
             )
         else:
-            st.caption("Select exactly one country to enable a local-currency price filter.")
+            st.caption(t("Select exactly one country to enable a local-currency price filter."))
 
     filters = {
         "countries": countries,
@@ -658,11 +673,11 @@ def prioritization_page(products: pd.DataFrame) -> None:
     filtered = apply_product_filters(products, filters)
 
     controls = st.columns([2, 1, 1])
-    sort_option = controls[0].selectbox("Sort results", list(SORT_OPTIONS), key="sort_products")
-    row_limit = controls[1].selectbox("Rows per page", [25, 50, 100], index=0)
+    sort_option = controls[0].selectbox(t("Sort results"), list(SORT_OPTIONS), key="sort_products")
+    row_limit = controls[1].selectbox(t("Rows per page"), [25, 50, 100], index=0)
     total_pages = max(1, math.ceil(len(filtered) / row_limit))
     page_number = controls[2].number_input(
-        "Page", min_value=1, max_value=total_pages, value=1, step=1
+        t("Page"), min_value=1, max_value=total_pages, value=1, step=1
     )
     filtered = sort_products(filtered, sort_option)
 
@@ -682,7 +697,7 @@ def prioritization_page(products: pd.DataFrame) -> None:
     )
 
     if filtered.empty:
-        st.info("No products match the current filters. Broaden one or more ranges or categories.")
+        st.info(t("No products match the current filters. Broaden one or more ranges or categories."))
         render_boundary()
         return
 
@@ -745,7 +760,7 @@ def prioritization_page(products: pd.DataFrame) -> None:
     download = filtered.copy()
     download["market_currency"] = download["country_code"].map({"id": "IDR", "vn": "VND"})
     st.download_button(
-        "Download current filtered results",
+        t("Download current filtered results"),
         download.to_csv(index=False).encode("utf-8-sig"),
         "skunivo_filtered_products.csv",
         "text/csv",
@@ -762,13 +777,13 @@ def prioritization_page(products: pd.DataFrame) -> None:
         )
     )
     selected_key = st.selectbox(
-        "Select from the filtered queue",
+        t("Select from the filtered queue"),
         list(lookup),
         format_func=lambda key: lookup[key],
         label_visibility="collapsed",
     )
     st.button(
-        "Open product explanation →",
+        t("Open product explanation →"),
         type="primary",
         on_click=open_product_explanation,
         args=(selected_key,),
@@ -790,7 +805,7 @@ def product_explanation_page(products: pd.DataFrame) -> None:
 
     selectors = st.columns(2)
     country = selectors[0].selectbox(
-        "Country",
+        t("Country"),
         countries,
         index=countries.index(default_country),
         format_func=lambda value: {"id": "Indonesia", "vn": "Vietnam"}[value],
@@ -804,12 +819,12 @@ def product_explanation_page(products: pd.DataFrame) -> None:
         else shop_options[0]
     )
     shop = selectors[1].selectbox(
-        "Shop", shop_options, index=shop_options.index(default_shop), key="explain_shop"
+        t("Shop"), shop_options, index=shop_options.index(default_shop), key="explain_shop"
     )
     shop_view = country_view[country_view["shop_name"].eq(shop)]
     search = st.text_input(
-        "Search by item ID or product name",
-        placeholder="Type part of a product name or an item ID",
+        t("Search by item ID or product name"),
+        placeholder=t("Type part of a product name or an item ID"),
         key="explain_search",
     ).strip()
     matches = shop_view
@@ -820,13 +835,13 @@ def product_explanation_page(products: pd.DataFrame) -> None:
         )
         matches = matches[match_mask]
     if matches.empty:
-        st.info("No product in this shop matches the search. Try a broader phrase or clear the search.")
+        st.info(t("No product in this shop matches the search. Try a broader phrase or clear the search."))
         return
 
     option_keys = matches["product_key"].tolist()
     default_key = remembered if remembered in option_keys else option_keys[0]
     selected_key = st.selectbox(
-        "Item ID and product",
+        t("Item ID and product"),
         option_keys,
         index=option_keys.index(default_key),
         format_func=lambda key: (
@@ -869,7 +884,7 @@ def product_explanation_page(products: pd.DataFrame) -> None:
     ]
     cols = st.columns(5)
     for index, (label, value) in enumerate(metrics):
-        cols[index % 5].metric(label, value)
+        cols[index % 5].metric(t(label), value)
 
     section_header(
         "Peer-relative benchmarks",
@@ -885,7 +900,7 @@ def product_explanation_page(products: pd.DataFrame) -> None:
     ]
     cols = st.columns(3)
     for index, (label, value) in enumerate(peer_metrics):
-        cols[index % 3].metric(label, value)
+        cols[index % 3].metric(t(label), value)
 
     section_header(
         "AI-assisted contextual benchmark",
@@ -897,16 +912,16 @@ def product_explanation_page(products: pd.DataFrame) -> None:
     model_confidence = str(product.get("ai_model_confidence", "Unavailable"))
     benchmark_metrics = st.columns(4)
     benchmark_metrics[0].metric(
-        "Model benchmark",
+        t("Model benchmark"),
         format_number(expected, 1),
         help="Cross-validated contextual sold-value proxy estimate.",
     )
-    benchmark_metrics[1].metric("Observed proxy", format_number(observed, 1))
+    benchmark_metrics[1].metric(t("Observed proxy"), format_number(observed, 1))
     benchmark_metrics[2].metric(
-        "Observed gap",
-        "Not available" if gap is None or pd.isna(gap) else f"{float(gap):+.0%}",
+        t("Observed gap"),
+        t("Not available") if gap is None or pd.isna(gap) else f"{float(gap):+.0%}",
     )
-    benchmark_metrics[3].metric("Model confidence", model_confidence)
+    benchmark_metrics[3].metric(t("Model confidence"), t(model_confidence))
     signal_class = "mp-badge-teal" if model_confidence == "High" else "mp-badge-orange"
     st.markdown(
         f"""
@@ -929,7 +944,7 @@ def product_explanation_page(products: pd.DataFrame) -> None:
             "Vietnam actionable-model ranking quality is limited. Treat this benchmark as supporting evidence only; transparent scoring and human review take priority."
         )
 
-    section_header("Why this recommendation?")
+    section_header("Why this recommendation")
     for reason_name in ("reason_1", "reason_2", "reason_3"):
         reason = product.get(reason_name)
         if reason is not None and not pd.isna(reason):
@@ -944,7 +959,7 @@ def product_explanation_page(products: pd.DataFrame) -> None:
         unsafe_allow_html=True,
     )
     st.button(
-        "Record decision →",
+        t("Open Decision Log →"),
         type="primary",
         on_click=open_decision_log,
         args=(selected_key,),
@@ -965,7 +980,7 @@ def product_explanation_page(products: pd.DataFrame) -> None:
         "decision_boundary": BOUNDARY,
     }
     st.download_button(
-        "Download Product Decision Summary",
+        t("Download Product Decision Summary"),
         pd.DataFrame([export_fields]).to_csv(index=False).encode("utf-8-sig"),
         f"skunivo_product_{product['item_id']}.csv",
         "text/csv",
@@ -1011,7 +1026,7 @@ def decision_log_page(products: pd.DataFrame) -> None:
 
     webhook_url, webhook_token = google_sheets_config()
     if webhook_url:
-        st.success("Decision persistence is connected to Team YOUNGHTT's Google Sheet.")
+        st.success(t("Decision persistence is connected to Team YOUNGHTT's Google Sheet."))
     else:
         st.info(
             "Google Sheets is not configured yet. Local runs append to outputs/mvp_decision_log.csv; public submissions remain downloadable until the webhook is added."
@@ -1020,17 +1035,17 @@ def decision_log_page(products: pd.DataFrame) -> None:
     with st.form("decision_log_form", clear_on_submit=False):
         cols = st.columns(2)
         reviewer_role = cols[0].selectbox(
-            "Reviewer role *",
+            t("Reviewer role *"),
             ["", "Merchandiser", "Category manager", "Commercial lead", "Judge or mentor", "Other"],
         )
-        reviewer_name = cols[1].text_input("Reviewer name (optional)")
+        reviewer_name = cols[1].text_input(t("Reviewer name (optional)"))
         decision_status = st.radio(
-            "Decision *",
+            t("Decision *"),
             ["", "Accept recommendation", "Override recommendation", "Need more evidence"],
             horizontal=True,
         )
         selected_action = st.selectbox(
-            "Action *",
+            t("Action *"),
             [
                 "",
                 "Protect current execution",
@@ -1044,19 +1059,19 @@ def decision_log_page(products: pd.DataFrame) -> None:
             ],
         )
         decision_rationale = st.text_area(
-            "Decision rationale *",
-            placeholder="What evidence supports this decision, and why are you accepting or overriding the recommendation?",
+            t("Decision rationale *"),
+            placeholder=t("What evidence supports this decision, and why are you accepting or overriding the recommendation?"),
         )
         success_metric = st.text_input(
-            "Success metric *",
-            value="Peer-relative sold-value and engagement change",
+            t("Success metric *"),
+            value=t("Peer-relative sold-value and engagement change"),
         )
         review_date = st.date_input(
-            "Review date *",
+            t("Review date *"),
             value=date.today() + timedelta(days=14),
             min_value=date.today(),
         )
-        submitted = st.form_submit_button("Save decision", type="primary")
+        submitted = st.form_submit_button(t("Save decision"), type="primary")
 
     if submitted:
         row = make_decision_row(
@@ -1073,7 +1088,7 @@ def decision_log_page(products: pd.DataFrame) -> None:
         )
         missing = validate_decision(row)
         if missing:
-            st.error("Please complete every field marked with an asterisk before saving.")
+            st.error(t("Please complete every field marked with an asterisk before saving."))
         else:
             st.session_state.setdefault("decision_submissions", []).append(row)
             public_mode = is_public_mode(getattr(st.context, "url", None))
@@ -1091,7 +1106,7 @@ def decision_log_page(products: pd.DataFrame) -> None:
                 webhook_token=webhook_token,
             )
             if delivery.delivered:
-                st.success("Decision saved to Team YOUNGHTT's decision log.")
+                st.success(t("Decision saved to Team YOUNGHTT's decision log."))
             elif local_saved:
                 st.success("Decision appended to the local decision log.")
             else:
@@ -1099,7 +1114,7 @@ def decision_log_page(products: pd.DataFrame) -> None:
                     "Persistent storage is not configured or unavailable. Download this decision record so it is not lost."
                 )
                 st.download_button(
-                    "Download decision record",
+                    t("Download decision record"),
                     decision_csv_bytes([row]),
                     f"skunivo_decision_{product['item_id']}.csv",
                     "text/csv",
@@ -1342,7 +1357,7 @@ def feedback_page() -> None:
     public_mode = is_public_mode(current_url)
     webhook_url, webhook_token = google_sheets_config()
     if webhook_url:
-        st.success("Feedback persistence is connected to Team YOUNGHTT's Google Sheet.")
+        st.success(t("Feedback persistence is connected to Team YOUNGHTT's Google Sheet."))
     elif public_mode:
         st.info(
             "Public-session feedback is temporary because persistent external storage is not configured. "
@@ -1350,16 +1365,16 @@ def feedback_page() -> None:
         )
     else:
         st.success("Local mode: valid submissions append to the local feedback CSV without overwriting prior rows.")
-    st.caption("Feedback is collected only for prototype evaluation. Personal details are optional.")
+    st.caption(t("Feedback is collected only for prototype evaluation. Personal details are optional."))
 
     with st.form("mvp_feedback_form", clear_on_submit=False):
         main_cols = st.columns(2)
         role = main_cols[0].selectbox(
-            "Participant role *",
+            t("Participant role *"),
             ["", "Merchandiser", "Category manager", "Analyst", "Product manager", "Judge or mentor", "Other"],
         )
         scenario = main_cols[1].selectbox(
-            "Test scenario completed *",
+            t("Test scenario completed *"),
             [
                 "",
                 "Executive portfolio review",
@@ -1370,22 +1385,24 @@ def feedback_page() -> None:
             ],
         )
         rating_cols = st.columns(4)
-        usefulness = rating_cols[0].select_slider("Usefulness *", options=[1, 2, 3, 4, 5], value=3)
-        clarity = rating_cols[1].select_slider("Explanation clarity *", options=[1, 2, 3, 4, 5], value=3)
-        trust = rating_cols[2].select_slider("Trust *", options=[1, 2, 3, 4, 5], value=3)
-        navigation = rating_cols[3].select_slider("Navigation *", options=[1, 2, 3, 4, 5], value=3)
+        usefulness = rating_cols[0].select_slider(t("Usefulness *"), options=[1, 2, 3, 4, 5], value=3)
+        clarity = rating_cols[1].select_slider(t("Explanation clarity *"), options=[1, 2, 3, 4, 5], value=3)
+        trust = rating_cols[2].select_slider(t("Trust *"), options=[1, 2, 3, 4, 5], value=3)
+        navigation = rating_cols[3].select_slider(t("Navigation *"), options=[1, 2, 3, 4, 5], value=3)
         would_use = st.radio(
-            "Would you use this for product review? *", ["", "Yes", "No"], horizontal=True
+            t("Would you use this for product review? *"),
+            ["", "Yes", "No"],
+            horizontal=True,
         )
-        useful_feature = st.text_area("Most useful feature *", height=90)
-        confusing = st.text_area("Most confusing element *", height=90)
-        improvement = st.text_area("Suggested improvement *", height=90)
-        st.markdown("##### Optional participant details")
+        useful_feature = st.text_area(t("Most useful feature *"), height=90)
+        confusing = st.text_area(t("Most confusing element *"), height=90)
+        improvement = st.text_area(t("Suggested improvement *"), height=90)
+        st.markdown(f"##### {t('Optional participant details')}")
         personal_cols = st.columns(3)
-        participant_name = personal_cols[0].text_input("Name")
-        organization = personal_cols[1].text_input("Organization")
-        email = personal_cols[2].text_input("Email")
-        submitted = st.form_submit_button("Submit prototype feedback", type="primary")
+        participant_name = personal_cols[0].text_input(t("Name"))
+        organization = personal_cols[1].text_input(t("Organization"))
+        email = personal_cols[2].text_input(t("Email"))
+        submitted = st.form_submit_button(t("Submit prototype feedback"), type="primary")
 
     if submitted:
         row = make_feedback_row(
@@ -1407,7 +1424,7 @@ def feedback_page() -> None:
         )
         missing = validate_feedback(row)
         if missing:
-            st.error("Please complete every field marked with an asterisk before submitting.")
+            st.error(t("Please complete every field marked with an asterisk before submitting."))
         else:
             st.session_state.setdefault("feedback_submissions", []).append(row)
             local_saved = False
@@ -1424,7 +1441,7 @@ def feedback_page() -> None:
                 webhook_token=webhook_token,
             )
             if delivery.delivered:
-                st.success("Thank you. Your feedback was submitted to Team YOUNGHTT.")
+                st.success(t("Thank you. Your feedback was submitted to Team YOUNGHTT."))
             elif local_saved:
                 st.success("Thank you. Your feedback was appended to the local evaluation file.")
             else:
@@ -1432,7 +1449,7 @@ def feedback_page() -> None:
                     "Persistent storage is not configured or unavailable. Download this feedback row so it is not lost."
                 )
                 st.download_button(
-                    "Download submitted feedback row",
+                    t("Download submitted feedback row"),
                     feedback_csv_bytes([row]),
                     "skunivo_feedback_submission.csv",
                     "text/csv",

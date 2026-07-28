@@ -28,6 +28,7 @@ calculate ROAS, automate pricing, or guarantee outcomes.
 - Transparent six-component what-if score simulator
 - Methodology, model diagnostics, robustness, limitations, and data roadmap
 - Structured usability feedback with local append or public-session download
+- English and Vietnamese interface switching with stable internal decision keys
 - Eight-page in-app navigation and a four-step automatically tracked Demo Guide
 
 ## 3. Project structure
