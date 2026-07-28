@@ -1,0 +1,186 @@
+﻿country_code,experiment,model,feature,feature_label,importance
+id,actionable_context,GradientBoostedStumpsFallback,log1p_rating_count,rating volume,0.7162581398011627
+id,actionable_context,GradientBoostedStumpsFallback,log1p_follower_count,shop followers,0.12953898825546414
+id,actionable_context,GradientBoostedStumpsFallback,rating_star,shop rating,0.06871942903666758
+id,actionable_context,GradientBoostedStumpsFallback,log1p_liked_count,listing likes,0.04890740651872583
+id,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Prettywell,brand grouped: Prettywell,0.019607677074241
+id,actionable_context,GradientBoostedStumpsFallback,log1p_price,log1p price,0.010743400263258195
+id,actionable_context,GradientBoostedStumpsFallback,likes_to_rating_ratio,likes to rating ratio,0.004619565164147553
+id,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Other,brand grouped: Other,0.0016053938863329377
+id,actionable_context,GradientBoostedStumpsFallback,price_ratio_original,price ratio original,0.0
+id,actionable_context,GradientBoostedStumpsFallback,has_promotion_id,has promotion id,0.0
+id,actionable_context,GradientBoostedStumpsFallback,price_ratio_pre_promo,price ratio pre promo,0.0
+id,actionable_context,GradientBoostedStumpsFallback,price_pct_country_category,peer-relative price,0.0
+id,actionable_context,GradientBoostedStumpsFallback,price_pct_shop,shop-relative price,0.0
+id,actionable_context,GradientBoostedStumpsFallback,displayed_discount_pct,displayed discount depth,0.0
+id,actionable_context,GradientBoostedStumpsFallback,discount_pct_peer,peer-relative discount,0.0
+id,actionable_context,GradientBoostedStumpsFallback,has_displayed_discount,has displayed discount,0.0
+id,actionable_context,GradientBoostedStumpsFallback,has_voucher,has voucher,0.0
+id,actionable_context,GradientBoostedStumpsFallback,voucher_min_spend_missing,voucher min spend missing,0.0
+id,actionable_context,GradientBoostedStumpsFallback,voucher_discount_missing,voucher discount missing,0.0
+id,actionable_context,GradientBoostedStumpsFallback,voucher_min_spend,voucher min spend,0.0
+id,actionable_context,GradientBoostedStumpsFallback,voucher_discount,voucher discount,0.0
+id,actionable_context,GradientBoostedStumpsFallback,deep_discount_flag,deep discount flag,0.0
+id,actionable_context,GradientBoostedStumpsFallback,promotion_mechanism_count,promotion mechanism count,0.0
+id,actionable_context,GradientBoostedStumpsFallback,is_promoted,current promotion status,0.0
+id,actionable_context,GradientBoostedStumpsFallback,rating,rating,0.0
+id,actionable_context,GradientBoostedStumpsFallback,response_rate,response rate,0.0
+id,actionable_context,GradientBoostedStumpsFallback,cancellation_rate,cancellation rate,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_assortment_size,shop assortment size,0.0
+id,actionable_context,GradientBoostedStumpsFallback,platform_category=Health,platform category: Health,0.0
+id,actionable_context,GradientBoostedStumpsFallback,platform_category=Mom & Baby,platform category: Mom & Baby,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Bright Me Up ! Sunscreen SPF 40 PA ++++,shop category: Bright Me Up ! Sunscreen SPF 40 PA ++++,0.0
+id,actionable_context,GradientBoostedStumpsFallback,high_like_indicator,high like indicator,0.0
+id,actionable_context,GradientBoostedStumpsFallback,is_official_shop,is official shop,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Calming Agent,shop category: Calming Agent,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Exclusive Member,shop category: Exclusive Member,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=FLAKES OFF MY CROWN SELENIUM,shop category: FLAKES OFF MY CROWN SELENIUM,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Ginger Hair Care Serum,shop category: Ginger Hair Care Serum,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Hair And Body Mist,shop category: Hair And Body Mist,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Hair Care,shop category: Hair Care,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Hair Mask,shop category: Hair Mask,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=LET IT GLOW,shop category: LET IT GLOW,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=LIPSCREEN,shop category: LIPSCREEN,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=LVJ BODY CARE SERIES,shop category: LVJ BODY CARE SERIES,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=LVJ HAIR CARE SERIES,shop category: LVJ HAIR CARE SERIES,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Lotion,shop category: Lotion,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=MAKE UP,shop category: MAKE UP,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Masker Wajah,shop category: Masker Wajah,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Bundle,shop category: Bundle,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=CALM ME SOFTLY,shop category: CALM ME SOFTLY,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=On Sale,shop category: On Sale,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=New Launch,shop category: New Launch,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=PROMO BUY MORE SAVE MORE,shop category: PROMO BUY MORE SAVE MORE,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=PROMO ❗,shop category: PROMO ❗,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Paket Perawatan Kulit,shop category: Paket Perawatan Kulit,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Peeling Serum,shop category: Peeling Serum,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Paket & Set Kecantikan,shop category: Paket & Set Kecantikan,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Paket Bundling,shop category: Paket Bundling,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=REPAIR ME NOW,shop category: REPAIR ME NOW,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=SHOP BY NEEDS,shop category: SHOP BY NEEDS,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=SKINCARE,shop category: SKINCARE,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Serum & Essence Wajah,shop category: Serum & Essence Wajah,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Serum Wajah,shop category: Serum Wajah,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Skin Care,shop category: Skin Care,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Perawatan Tubuh,shop category: Perawatan Tubuh,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Produk Terlaris,shop category: Produk Terlaris,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Special Day Banting Harga ✨💵,shop category: Special Day Banting Harga ✨💵,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Skincare Wajah,shop category: Skincare Wajah,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Toner,shop category: Toner,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=Unknown,shop category: Unknown,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=💖NEW LAUNCH,shop category: 💖NEW LAUNCH,0.0
+id,actionable_context,GradientBoostedStumpsFallback,brand_grouped=GLAD2GLOW,brand grouped: GLAD2GLOW,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=powder&spray setting,shop category: powder&spray setting,0.0
+id,actionable_context,GradientBoostedStumpsFallback,shop_category=✨BEST SELLING,shop category: ✨BEST SELLING,0.0
+id,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Mooi Pure Glow,brand grouped: Mooi Pure Glow,0.0
+id,actionable_context,GradientBoostedStumpsFallback,brand_grouped=He-Ji,brand grouped: He-Ji,0.0
+id,actionable_context,GradientBoostedStumpsFallback,brand_grouped=SCORA,brand grouped: SCORA,0.0
+id,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Unknown,brand grouped: Unknown,0.0
+id,actionable_context,GradientBoostedStumpsFallback,brand_grouped=ZOICY,brand grouped: ZOICY,0.0
+id,actionable_context,GradientBoostedStumpsFallback,brand_grouped=lavojoy,brand grouped: lavojoy,0.0
+id,actionable_context,GradientBoostedStumpsFallback,price_band=Mid-market,price band: Mid-market,0.0
+id,actionable_context,GradientBoostedStumpsFallback,price_band=Premium,price band: Premium,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,log1p_rating_count,rating volume,0.5164415639050198
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Nescafé,brand grouped: Nescafé,0.1112989420529707
+vn,actionable_context,GradientBoostedStumpsFallback,is_official_shop,is official shop,0.10525431231007995
+vn,actionable_context,GradientBoostedStumpsFallback,log1p_liked_count,listing likes,0.08362128560485825
+vn,actionable_context,GradientBoostedStumpsFallback,shop_assortment_size,shop assortment size,0.06318629497992645
+vn,actionable_context,GradientBoostedStumpsFallback,response_rate,response rate,0.0418431075238028
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=MILO,brand grouped: MILO,0.033683630621729854
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Richy,brand grouped: Richy,0.027422120387865005
+vn,actionable_context,GradientBoostedStumpsFallback,rating_star,shop rating,0.009075619707181242
+vn,actionable_context,GradientBoostedStumpsFallback,log1p_follower_count,shop followers,0.008173122906565753
+vn,actionable_context,GradientBoostedStumpsFallback,has_displayed_discount,has displayed discount,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,price_pct_shop,shop-relative price,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,price_pct_country_category,peer-relative price,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,discount_pct_peer,peer-relative discount,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,displayed_discount_pct,displayed discount depth,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,has_voucher,has voucher,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,voucher_discount_missing,voucher discount missing,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,voucher_min_spend,voucher min spend,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,voucher_discount,voucher discount,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,deep_discount_flag,deep discount flag,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,rating,rating,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,price_ratio_pre_promo,price ratio pre promo,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,price_ratio_original,price ratio original,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,promotion_mechanism_count,promotion mechanism count,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,likes_to_rating_ratio,likes to rating ratio,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,high_like_indicator,high like indicator,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,voucher_min_spend_missing,voucher min spend missing,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,cancellation_rate,cancellation rate,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,platform_category=Mẹ & Bé,platform category: Mẹ & Bé,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,platform_category=Nhà cửa & Đời sống,platform category: Nhà cửa & Đời sống,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,platform_category=Sắc Đẹp,platform category: Sắc Đẹp,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,platform_category=Sở thích & Sưu tầm,platform category: Sở thích & Sưu tầm,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,platform_category=Sức Khỏe,platform category: Sức Khỏe,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,platform_category=Thể Thao & Dã Ngoại,platform category: Thể Thao & Dã Ngoại,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,platform_category=Thời trang trẻ em & trẻ sơ sinh,platform category: Thời trang trẻ em & trẻ sơ sinh,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,platform_category=Thực phẩm và đồ uống,platform category: Thực phẩm và đồ uống,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,platform_category=Túi Ví Nam,platform category: Túi Ví Nam,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,has_promotion_id,has promotion id,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,is_promoted,current promotion status,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,log1p_price,log1p price,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,platform_category=Điện Thoại & Phụ Kiện,platform category: Điện Thoại & Phụ Kiện,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,platform_category=Văn Phòng Phẩm,platform category: Văn Phòng Phẩm,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,platform_category=Túi Ví Nữ,platform category: Túi Ví Nữ,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Box độc quyền,shop category: Box độc quyền,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Bánh kẹo sỉ,shop category: Bánh kẹo sỉ,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=BÁNH GẠO AN - BÁNH GẠO CHO CẢ GIA ĐÌNH,shop category: BÁNH GẠO AN - BÁNH GẠO CHO CẢ GIA ĐÌNH,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=BÁNH ĂN SÁNG C'EST BON,shop category: BÁNH ĂN SÁNG C'EST BON,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Bánh Dinh Dưỡng,shop category: Bánh Dinh Dưỡng,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Cuồng nhiệt Bóng Đá 2026,shop category: Cuồng nhiệt Bóng Đá 2026,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Cà phê & Trà,shop category: Cà phê & Trà,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Dòng sản phẩm Giảm 50% Đường,shop category: Dòng sản phẩm Giảm 50% Đường,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Festa Richy - Bánh Mì Hoa Cúc Ngàn Lớp,shop category: Festa Richy - Bánh Mì Hoa Cúc Ngàn Lớp,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Fe’sta – Bánh tươi ăn vặt,shop category: Fe’sta – Bánh tươi ăn vặt,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Bánh Ăn Sáng,shop category: Bánh Ăn Sáng,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Bánh Ăn Vặt,shop category: Bánh Ăn Vặt,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=CHOCOPIE,shop category: CHOCOPIE,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=JinJu - Bánh Gạo Hàn Quốc Đủ Vị,shop category: JinJu - Bánh Gạo Hàn Quốc Đủ Vị,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,"shop_category=Jinju – Bánh gạo giòn, ngon","shop category: Jinju – Bánh gạo giòn, ngon",0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Karo - Bánh Tươi Cho Mọi Nhà,shop category: Karo - Bánh Tươi Cho Mọi Nhà,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Karo – Bánh tươi năng lượng,shop category: Karo – Bánh tươi năng lượng,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Kenju - Bánh Quy Kem Dẻo,shop category: Kenju - Bánh Quy Kem Dẻo,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Kenju- Ngon có gu,shop category: Kenju- Ngon có gu,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Kinh Đô Tết 2026,shop category: Kinh Đô Tết 2026,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Kẹo Cho Bé,shop category: Kẹo Cho Bé,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,"shop_category=Kẹo Dẻo Vị Hoa Quả LOT100, 4D","shop category: Kẹo Dẻo Vị Hoa Quả LOT100, 4D",0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Kẹo cứng,shop category: Kẹo cứng,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Kẹo dẻo,shop category: Kẹo dẻo,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Kẹo mút,shop category: Kẹo mút,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Kẹo ngậm,shop category: Kẹo ngậm,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Gia vị nấu ăn,shop category: Gia vị nấu ăn,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Giảm giá,shop category: Giảm giá,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Gouté,shop category: Gouté,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=OatMilk- Bánh Yến Mạch,shop category: OatMilk- Bánh Yến Mạch,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=MILO & Sữa,shop category: MILO & Sữa,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Kẹo Ăn Vặt,shop category: Kẹo Ăn Vặt,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=PEPTAMEN + ORAL,shop category: PEPTAMEN + ORAL,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Sản Phẩm Bán Chạy,shop category: Sản Phẩm Bán Chạy,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Pepie – Bánh mềm phủ socola,shop category: Pepie – Bánh mềm phủ socola,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=SIÊU SALE MUA 1 TẶNG 1,shop category: SIÊU SALE MUA 1 TẶNG 1,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=SẢN PHẨM MỚI - BOOST GLUCOSE CONTROL,shop category: SẢN PHẨM MỚI - BOOST GLUCOSE CONTROL,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Unknown,shop category: Unknown,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=VITAL PROTEINS - 100% Collagen Peptides,shop category: VITAL PROTEINS - 100% Collagen Peptides,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Yến mạch – Healthy mỗi ngày,shop category: Yến mạch – Healthy mỗi ngày,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=[BEST SELLER] Top Sản Phẩm Bán Chạy,shop category: [BEST SELLER] Top Sản Phẩm Bán Chạy,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=ƯU ĐÃI THÁNG 6 - DEAL VÀNG RỘN RÀNG,shop category: ƯU ĐÃI THÁNG 6 - DEAL VÀNG RỘN RÀNG,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Sản Phẩm Mới,shop category: Sản Phẩm Mới,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Sản phẩm độc quyền ONLINE,shop category: Sản phẩm độc quyền ONLINE,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=Tất cả sản phẩm,shop category: Tất cả sản phẩm,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Chupa Chups,brand grouped: Chupa Chups,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=🔥MUA 1 TẶNG 1,shop category: 🔥MUA 1 TẶNG 1,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,shop_category=🔥  Bán chạy nhất,shop category: 🔥  Bán chạy nhất,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Cool Air,brand grouped: Cool Air,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Nestle,brand grouped: Nestle,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Nutren Junior,brand grouped: Nutren Junior,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=ORION,brand grouped: ORION,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Maggi,brand grouped: Maggi,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Other,brand grouped: Other,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Skittles,brand grouped: Skittles,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Snickers,brand grouped: Snickers,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=Unknown,brand grouped: Unknown,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=VITAL PROTEINS,brand grouped: VITAL PROTEINS,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,brand_grouped=m&m's,brand grouped: m&m's,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,price_band=Mid-market,price band: Mid-market,0.0
+vn,actionable_context,GradientBoostedStumpsFallback,price_band=Premium,price band: Premium,0.0
