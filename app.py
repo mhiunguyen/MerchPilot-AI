@@ -434,8 +434,21 @@ def executive_page(products: pd.DataFrame, charts: dict[str, Path]) -> None:
                 bins=list(range(0, 105, 5)),
                 include_lowest=True,
             )
-            histogram = bins.value_counts(sort=False).rename("Listings")
-            st.bar_chart(histogram, color="#8b7cff", height=360)
+            histogram = (
+                bins.value_counts(sort=False)
+                .rename_axis("Score band")
+                .reset_index(name="Listings")
+            )
+            # Altair cannot serialize pandas Interval values. String labels
+            # keep the market-specific chart stable across library versions.
+            histogram["Score band"] = histogram["Score band"].astype(str)
+            st.bar_chart(
+                histogram,
+                x="Score band",
+                y="Listings",
+                color="#8b7cff",
+                height=360,
+            )
             st.caption(f"Opportunity score distribution for {market}; 5-point score bands.")
     with chart_right:
         if market == "All markets":
@@ -444,8 +457,14 @@ def executive_page(products: pd.DataFrame, charts: dict[str, Path]) -> None:
                 "Count of listings by recommendation type and market.",
             )
         else:
-            mix = recommendation_mix(view).set_index("Recommendation")
-            st.bar_chart(mix["Listings"], color="#11b8a5" if code == "id" else "#f28b30", height=360)
+            mix = recommendation_mix(view)
+            st.bar_chart(
+                mix,
+                x="Recommendation",
+                y="Listings",
+                color="#11b8a5" if code == "id" else "#f28b30",
+                height=360,
+            )
             st.caption(f"Recommendation-label distribution for {market}.")
 
     table_left, table_right = st.columns(2)
