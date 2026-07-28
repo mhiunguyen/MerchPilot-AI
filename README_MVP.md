@@ -9,6 +9,9 @@ model during normal use.
 
 Primary promise: **Turn marketplace signals into explainable product decisions.**
 
+Live app: https://skunivo.streamlit.app/  
+Source repository: https://github.com/mhiunguyen/SKUNIVO
+
 Important boundary: this is a decision-support prototype. It does not forecast
 transactional demand, estimate causal promotion lift, optimize profit or inventory,
 calculate ROAS, automate pricing, or guarantee outcomes.

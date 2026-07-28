@@ -7,6 +7,11 @@ benchmarks marketplace listings within their local market context, creates a
 transparent opportunity score, and explains which products should be protected,
 tested, reviewed, maintained, or deprioritized.
 
+## Live links
+
+- App: https://skunivo.streamlit.app/
+- Repository: https://github.com/mhiunguyen/SKUNIVO
+
 The application uses 1,157 latest listings across 20 shops in Indonesia and
 Vietnam. It consumes precomputed outputs and does not retrain models during app use.
 
