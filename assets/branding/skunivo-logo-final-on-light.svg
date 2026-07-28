@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 512" role="img" aria-labelledby="title desc">
+  <title id="title">SKUNIVO final logo for light backgrounds</title>
+  <desc id="desc">A custom geometric SKUNIVO wordmark with a lime decision point in the letter K.</desc>
+  <g fill="none" stroke="#071525" stroke-width="50" stroke-linecap="square" stroke-linejoin="round">
+    <path d="M274 184H156C124 184 106 201 106 224C106 247 124 264 156 264H224C260 264 280 282 280 309C280 337 260 354 224 354H104"/>
+    <path d="M374 171V354"/>
+    <path d="M410 260L497 173" stroke-width="52"/>
+    <path d="M410 260L493 348" stroke-width="52"/>
+    <path d="M572 171V289C572 333 600 354 638 354C676 354 704 333 704 289V171"/>
+    <path d="M802 354V171L944 354V171"/>
+    <path d="M1025 171V354"/>
+    <path d="M1098 171L1178 354L1258 171"/>
+    <rect x="1333" y="171" width="164" height="183" rx="48"/>
+  </g>
+  <path d="M412 240L432 260L412 280L392 260Z" fill="#C9FF3D"/>
+</svg>

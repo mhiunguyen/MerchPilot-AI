@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import html
 import logging
 import math
@@ -57,9 +58,21 @@ from app_components.persistence import deliver_record, google_sheets_config
 from app_components.styles import APP_CSS
 
 
+BRAND_DIR = ROOT / "assets" / "branding"
+LOGO_ON_DARK = BRAND_DIR / "skunivo-logo-final-on-dark.svg"
+FAVICON_MARK = BRAND_DIR / "skunivo-favicon.svg"
+FAVICON = BRAND_DIR / "skunivo-favicon-32.png"
+
+
+def image_data_uri(path: Path) -> str:
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    mime_type = "image/svg+xml" if path.suffix.lower() == ".svg" else "image/png"
+    return f"data:{mime_type};base64,{encoded}"
+
+
 st.set_page_config(
-    page_title="MerchPilot AI",
-    page_icon="◆",
+    page_title="SKUNIVO",
+    page_icon=str(FAVICON),
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -68,7 +81,7 @@ st.markdown(APP_CSS, unsafe_allow_html=True)
 LOG_DIR = ROOT / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 logging.basicConfig(
-    filename=LOG_DIR / "merchpilot_app.log",
+    filename=LOG_DIR / "skunivo_app.log",
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
 )
@@ -124,7 +137,7 @@ def page_header(title: str) -> None:
     st.markdown(
         f"""
         <div class="mp-page-head">
-          <span class="mp-kicker">MERCHPILOT AI · DECISION SUPPORT</span>
+          <span class="mp-kicker">SKUNIVO · DECISION SUPPORT</span>
           <h1>{html.escape(title)}</h1>
           <p>{html.escape(PAGE_SUBTITLES[title])}</p>
         </div>
@@ -147,7 +160,7 @@ def render_footer() -> None:
     st.markdown(
         """
         <div class="mp-footer">
-          <strong>MerchPilot AI</strong> · Built by Team YOUNGHTT<br>
+          <strong>SKUNIVO</strong> · Built by Team YOUNGHTT<br>
           Human review remains part of every decision. Scores are peer-relative and use precomputed marketplace signals.
         </div>
         """,
@@ -220,10 +233,13 @@ def render_shell() -> None:
         st.session_state.nav_radio = st.session_state.active_page
 
     with st.sidebar:
+        sidebar_logo = image_data_uri(LOGO_ON_DARK)
         st.markdown(
-            """
-            <div class="mp-brand">MerchPilot<span class="mp-brand-dot">◆</span>AI</div>
-            <div class="mp-brand-sub">Explainable Product Opportunity<br>and Promotion Prioritization</div>
+            f"""
+            <div class="mp-brand-lockup">
+              <img class="mp-brand-wordmark" src="{sidebar_logo}" alt="SKUNIVO">
+            </div>
+            <div class="mp-brand-sub">Explainable e-commerce decision intelligence</div>
             """,
             unsafe_allow_html=True,
         )
@@ -241,12 +257,14 @@ def render_shell() -> None:
 
 def home_page(products: pd.DataFrame) -> None:
     top_product = products.sort_values("opportunity_score", ascending=False).iloc[0]
+    hero_logo = image_data_uri(FAVICON_MARK)
     st.markdown(
-        """
+        f"""
         <div class="mp-hero">
+          <img class="mp-hero-mark" src="{hero_logo}" alt="" aria-hidden="true">
           <div class="mp-eyebrow">AI DECISION COPILOT FOR E-COMMERCE</div>
           <h1>Turn marketplace signals into <span class="mp-accent">explainable</span> product decisions.</h1>
-          <p>MerchPilot benchmarks each product against comparable listings in its local market,
+          <p>SKUNIVO benchmarks each product against comparable listings in its local market,
           assigns a transparent opportunity score, and explains which products should be protected,
           tested, reviewed, maintained, or deprioritized.</p>
         </div>
@@ -330,7 +348,7 @@ def home_page(products: pd.DataFrame) -> None:
             unsafe_allow_html=True,
         )
 
-    section_header("Why MerchPilot")
+    section_header("Why SKUNIVO")
     cols = st.columns(3)
     cards = [
         (
@@ -729,7 +747,7 @@ def prioritization_page(products: pd.DataFrame) -> None:
     st.download_button(
         "Download current filtered results",
         download.to_csv(index=False).encode("utf-8-sig"),
-        "merchpilot_filtered_products.csv",
+        "skunivo_filtered_products.csv",
         "text/csv",
     )
 
@@ -949,7 +967,7 @@ def product_explanation_page(products: pd.DataFrame) -> None:
     st.download_button(
         "Download Product Decision Summary",
         pd.DataFrame([export_fields]).to_csv(index=False).encode("utf-8-sig"),
-        f"merchpilot_product_{product['item_id']}.csv",
+        f"skunivo_product_{product['item_id']}.csv",
         "text/csv",
     )
     render_boundary()
@@ -1083,7 +1101,7 @@ def decision_log_page(products: pd.DataFrame) -> None:
                 st.download_button(
                     "Download decision record",
                     decision_csv_bytes([row]),
-                    f"merchpilot_decision_{product['item_id']}.csv",
+                    f"skunivo_decision_{product['item_id']}.csv",
                     "text/csv",
                 )
             mark_demo_step("demo_step_decision")
@@ -1416,7 +1434,7 @@ def feedback_page() -> None:
                 st.download_button(
                     "Download submitted feedback row",
                     feedback_csv_bytes([row]),
-                    "merchpilot_feedback_submission.csv",
+                    "skunivo_feedback_submission.csv",
                     "text/csv",
                 )
             mark_demo_step("demo_step_feedback")
@@ -1430,7 +1448,7 @@ def main() -> None:
     except DataValidationError as exc:
         logging.exception("Startup validation failed")
         st.error(
-            "MerchPilot could not load its precomputed decision outputs. "
+            "SKUNIVO could not load its precomputed decision outputs. "
             "Please confirm the deployment includes the required outputs and chart files."
         )
         with st.expander("Validation detail"):
@@ -1438,7 +1456,7 @@ def main() -> None:
         st.stop()
     except Exception:
         logging.exception("Unexpected startup failure")
-        st.error("MerchPilot encountered an unexpected startup problem. Technical details were logged.")
+        st.error("SKUNIVO encountered an unexpected startup problem. Technical details were logged.")
         st.stop()
 
     page = st.session_state.active_page

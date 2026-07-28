@@ -30,10 +30,16 @@ FEEDBACK_COLUMNS = [
 
 
 def is_public_mode(current_url: str | None = None) -> bool:
-    explicit = os.getenv("MERCHPILOT_PUBLIC_MODE", "").strip().lower()
+    explicit = (
+        os.getenv("SKUNIVO_PUBLIC_MODE")
+        or os.getenv("MERCHPILOT_PUBLIC_MODE", "")
+    ).strip().lower()
     if explicit in {"1", "true", "yes"}:
         return True
-    local_override = os.getenv("MERCHPILOT_LOCAL_MODE", "").strip().lower()
+    local_override = (
+        os.getenv("SKUNIVO_LOCAL_MODE")
+        or os.getenv("MERCHPILOT_LOCAL_MODE", "")
+    ).strip().lower()
     if local_override in {"1", "true", "yes"}:
         return False
     if os.getenv("STREAMLIT_SHARING_MODE"):

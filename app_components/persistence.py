@@ -19,8 +19,14 @@ class DeliveryResult:
 
 def google_sheets_config() -> tuple[str, str]:
     """Return webhook URL and shared token without exposing either in the UI."""
-    env_url = os.getenv("MERCHPILOT_GOOGLE_SHEETS_WEBHOOK_URL", "").strip()
-    env_token = os.getenv("MERCHPILOT_GOOGLE_SHEETS_WEBHOOK_TOKEN", "").strip()
+    env_url = (
+        os.getenv("SKUNIVO_GOOGLE_SHEETS_WEBHOOK_URL")
+        or os.getenv("MERCHPILOT_GOOGLE_SHEETS_WEBHOOK_URL", "")
+    ).strip()
+    env_token = (
+        os.getenv("SKUNIVO_GOOGLE_SHEETS_WEBHOOK_TOKEN")
+        or os.getenv("MERCHPILOT_GOOGLE_SHEETS_WEBHOOK_TOKEN", "")
+    ).strip()
     if env_url:
         return env_url, env_token
     try:

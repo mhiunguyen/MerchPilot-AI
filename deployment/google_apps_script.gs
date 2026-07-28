@@ -1,5 +1,5 @@
 /**
- * MerchPilot AI persistence endpoint.
+ * SKUNIVO persistence endpoint.
  *
  * Script Properties required:
  * - SPREADSHEET_ID: destination Google Sheet ID
@@ -62,7 +62,7 @@ function appendRecord_(spreadsheet, sheetName, record) {
 function notifyTeam_(properties, sheetName, record) {
   const recipient = properties.getProperty("NOTIFICATION_EMAIL");
   if (!recipient) return;
-  const subject = `[MerchPilot AI] New ${sheetName.slice(0, -1).toLowerCase()} submission`;
+  const subject = `[SKUNIVO] New ${sheetName.slice(0, -1).toLowerCase()} submission`;
   const lines = [
     `A new ${sheetName.toLowerCase()} row was saved for Team YOUNGHTT.`,
     "",
@@ -72,7 +72,7 @@ function notifyTeam_(properties, sheetName, record) {
     `Decision: ${record.decision_status || ""}`,
     `Would use: ${record.would_use || ""}`,
     "",
-    "Open the MerchPilot Google Sheet to review the complete submission."
+    "Open the SKUNIVO Google Sheet to review the complete submission."
   ];
   MailApp.sendEmail(recipient, subject, lines.join("\n"));
 }

@@ -1,8 +1,8 @@
-# MerchPilot AI — Public MVP
+# SKUNIVO — Public MVP
 
 ## 1. Product overview
 
-MerchPilot AI is an explainable e-commerce Decision Copilot. It helps merchandising
+SKUNIVO is an explainable e-commerce Decision Copilot. It helps merchandising
 teams decide which product listings to protect, review, test, maintain, or
 deprioritize. The application consumes precomputed outputs; it does not retrain a
 model during normal use.
@@ -92,7 +92,7 @@ The repository is ready for Streamlit Community Cloud.
 2. Push the repository to GitHub.
 3. In Streamlit Community Cloud, choose **Create app**.
 4. Select the repository and branch, then set **Main file path** to `app.py`.
-5. Add `MERCHPILOT_PUBLIC_MODE=true` in the app settings if you want the
+5. Add `SKUNIVO_PUBLIC_MODE=true` in the app settings if you want the
    feedback screen to explicitly use session/download mode.
 6. Deploy and confirm all eight pages, charts, Decision Log, and product selectors.
 
@@ -101,7 +101,7 @@ Exact first-push commands (replace the placeholder; do not commit secrets):
 ```powershell
 git init
 git add .
-git commit -m "Build MerchPilot AI public MVP"
+git commit -m "Build SKUNIVO public MVP"
 git branch -M main
 git remote add origin <REPOSITORY_URL>
 git push -u origin main

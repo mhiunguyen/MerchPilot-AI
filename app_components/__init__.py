@@ -1,2 +1,1 @@
-"""Reusable components for the MerchPilot AI Streamlit MVP."""
-
+"""Reusable components for the SKUNIVO Streamlit MVP."""

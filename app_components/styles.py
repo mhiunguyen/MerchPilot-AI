@@ -35,12 +35,14 @@ APP_CSS = """
 
 .block-container { max-width: 1240px; padding-top: 1.7rem; padding-bottom: 4rem; }
 
-.mp-brand {
-  letter-spacing: -.04em; font-size: 1.55rem; font-weight: 820; color: white;
-  margin: .2rem 0 .2rem;
+.mp-brand-lockup {
+  display: flex; align-items: center; margin: .2rem 0 .55rem;
 }
-.mp-brand-dot { color: var(--mp-lime); }
-.mp-brand-sub { color: #aeb8c8; font-size: .78rem; line-height: 1.4; margin-bottom: 1rem; }
+.mp-brand-wordmark { width: 10.75rem; max-width: 100%; height: auto; display: block; }
+.mp-brand-sub {
+  color: #aeb8c8; font-size: .7rem; line-height: 1.4;
+  letter-spacing: .015em; margin: 0 0 1rem;
+}
 
 .mp-hero {
   position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,.12);
@@ -57,6 +59,11 @@ APP_CSS = """
   background-size: 22px 22px;
   mask-image: linear-gradient(120deg, black, transparent 65%);
 }
+.mp-hero-mark {
+  position: absolute; z-index: 0; right: clamp(1.1rem, 4vw, 3.5rem); top: 1.25rem;
+  width: clamp(4.5rem, 10vw, 8.5rem); height: auto; opacity: .16;
+}
+.mp-hero > *:not(.mp-hero-mark) { position: relative; z-index: 1; }
 .mp-eyebrow {
   color: var(--mp-lime); font-size: .78rem; font-weight: 800; letter-spacing: .14em;
   text-transform: uppercase; margin-bottom: 1rem;
@@ -166,4 +173,3 @@ div[data-testid="stMetricValue"] { letter-spacing:-.035em; }
 }
 </style>
 """
-

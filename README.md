@@ -1,8 +1,8 @@
-# MerchPilot AI
+# SKUNIVO
 
-**Explainable Product Opportunity and Promotion Prioritization**
+**Explainable E-commerce Decision Intelligence**
 
-MerchPilot AI is a Streamlit decision-support MVP for merchandising teams. It
+SKUNIVO is a Streamlit decision-support MVP for merchandising teams. It
 benchmarks marketplace listings within their local market context, creates a
 transparent opportunity score, and explains which products should be protected,
 tested, reviewed, maintained, or deprioritized.
@@ -27,4 +27,3 @@ current three-day snapshot dataset.
 
 For architecture, deployment, limitations, troubleshooting, screenshots, and the
 demo test script, see [README_MVP.md](README_MVP.md).
-

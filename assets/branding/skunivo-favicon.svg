@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">SKUNIVO favicon</title>
+  <desc id="desc">A precision K mark with a lime decision point on a navy rounded square.</desc>
+  <rect x="32" y="32" width="448" height="448" rx="89" fill="#071525"/>
+  <path d="M168 136V376" fill="none" stroke="#F7F5EF" stroke-width="64" stroke-linecap="square"/>
+  <path d="M204 256L330 148" fill="none" stroke="#F7F5EF" stroke-width="66" stroke-linecap="square"/>
+  <path d="M204 256L326 348" fill="none" stroke="#F7F5EF" stroke-width="66" stroke-linecap="square"/>
+  <path
+    d="M210 230L236 256L210 282L184 256Z"
+    fill="#C9FF3D"
+  />
+</svg>
