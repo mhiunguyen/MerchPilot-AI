@@ -13,6 +13,7 @@ outputs/*_temp.csv
 *.tmp
 *.log
 screenshots/local-*.png
+deliverables/
 
 # Local analysis assets not required by the public Streamlit deployment
 Data/
@@ -29,6 +30,7 @@ outputs/*
 !outputs/feature_importance.csv
 !outputs/top_opportunities_by_country.csv
 !outputs/score_sensitivity.csv
+!outputs/ai_model_artifact.json
 !outputs/charts/
 outputs/charts/*
 !outputs/charts/01_opportunity_score_distribution.png

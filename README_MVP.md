@@ -20,15 +20,17 @@ calculate ROAS, automate pricing, or guarantee outcomes.
 - Product prioritization with market, shop, category, decision, confidence, score,
   promotion, official-shop, engagement, and local-price filters
 - Auditable product explanations with peer percentiles and business-language reasons
+- A visible AI-assisted contextual benchmark using shop-grouped out-of-fold predictions
+- A human Decision Log for accepting, overriding, or deferring recommendations
 - Transparent six-component what-if score simulator
 - Methodology, model diagnostics, robustness, limitations, and data roadmap
 - Structured usability feedback with local append or public-session download
-- Seven-page in-app navigation and a five-task guided evaluation flow
+- Eight-page in-app navigation and a four-step automatically tracked Demo Guide
 
 ## 3. Project structure
 
 ```text
-app.py                         Streamlit entry point and seven page views
+app.py                         Streamlit entry point and eight page views
 app_components/
   data_loader.py               Cached loading, aliases, schema validation
   filters.py                   Filter, sort, active-review, price-label logic
@@ -92,7 +94,7 @@ The repository is ready for Streamlit Community Cloud.
 4. Select the repository and branch, then set **Main file path** to `app.py`.
 5. Add `MERCHPILOT_PUBLIC_MODE=true` in the app settings if you want the
    feedback screen to explicitly use session/download mode.
-6. Deploy and confirm all seven pages, charts, downloads, and product selectors.
+6. Deploy and confirm all eight pages, charts, Decision Log, and product selectors.
 
 Exact first-push commands (replace the placeholder; do not commit secrets):
 
@@ -122,10 +124,30 @@ git push -u origin main
 Local development appends valid rows to `outputs/mvp_user_feedback.csv`; existing
 rows are never overwritten. The file is ignored by Git.
 
-Streamlit Community Cloud local files are not durable. With no external storage,
-public submissions remain in the current session and are offered as a CSV download.
-Personal details are optional. A future external persistence integration should use
-Streamlit secrets or environment variables—never hard-coded credentials.
+Streamlit Community Cloud local files are not durable. The production path uses the
+Google Apps Script endpoint in `deployment/google_apps_script.gs`. It appends feedback
+to a `Feedback` sheet, decisions to a `Decisions` sheet, and can email Team YOUNGHTT
+when a new row arrives. If the endpoint is not configured, the app offers a CSV fallback.
+Personal details remain optional.
+
+### Google Sheets and email setup
+
+1. Create one Google Sheet for the prototype evaluation.
+2. Open **Extensions → Apps Script** and paste `deployment/google_apps_script.gs`.
+3. In **Project Settings → Script Properties**, add:
+   - `SPREADSHEET_ID`: the ID from the Google Sheet URL.
+   - `MERCHPILOT_TOKEN`: a long random secret.
+   - `NOTIFICATION_EMAIL`: the Team YOUNGHTT Gmail address that receives alerts.
+4. Deploy the script as a **Web app**, executing as the owner.
+5. Add these values to Streamlit Community Cloud secrets:
+
+```toml
+[google_sheets]
+webhook_url = "https://script.google.com/macros/s/your-deployment-id/exec"
+webhook_token = "the-same-long-random-secret"
+```
+
+Do not send or commit a Google password, verification code, or the real webhook token.
 
 ## 9. Troubleshooting
 
@@ -137,8 +159,8 @@ Streamlit secrets or environment variables—never hard-coded credentials.
 - **Charts do not render:** confirm Git LFS did not replace PNGs with pointer files.
 - **No price filter:** select exactly one country; this is an intentional
   cross-currency safeguard.
-- **Feedback is temporary:** set up durable external storage or export the submitted
-  row from the public-session screen.
+- **Feedback is temporary:** configure the Google Apps Script webhook and confirm the
+  app shows “connected to Team YOUNGHTT's Google Sheet.”
 - **Port already in use:** run `streamlit run app.py --server.port 8502`.
 
 ## 10. Screenshot placeholders
@@ -149,21 +171,22 @@ Capture these after deployment and replace the placeholders in project materials
 - `[Screenshot: Executive Overview with normalized market selector]`
 - `[Screenshot: Product Prioritization filters and ranked table]`
 - `[Screenshot: one Product Explanation decision record]`
+- `[Screenshot: AI-assisted contextual benchmark and Decision Log]`
 - `[Screenshot: What-if Score Explorer with contribution chart]`
 - `[Screenshot: Methodology model results and limitations]`
 - `[Screenshot: User Feedback form and persistence notice]`
 
 ## 11. Demo testing script
 
-1. Open **Home** and read the product promise and honest boundary.
-2. Select **Launch Decision Copilot**.
-3. Filter to one country, one shop, and an active-review recommendation.
-4. Confirm the local currency label and download the filtered CSV.
-5. Open one product explanation and compare its score, confidence, peer benchmarks,
-   and three reasons.
-6. Download the product decision summary.
-7. Open **What-if Score Explorer**, choose each preset, and move one component from
+1. Open **Home** and start the four-step **Demo Guide**.
+2. Filter to one country, one shop, and an active-review recommendation.
+3. Open one Product Explanation and compare its transparent score with the
+   AI-assisted contextual benchmark.
+4. Open **Decision Log**, accept or override the recommendation, select an action,
+   define a success metric, and save.
+5. Confirm the Google Sheet receives a row under `Decisions`.
+6. Open **What-if Score Explorer**, choose each preset, and move one component from
    0 to 100.
-8. Confirm all-zero components score 0, all-100 score 100, and all-50 score 50.
-9. Review Indonesia and Vietnam model notes under **Methodology and Transparency**.
-10. Submit the feedback form without personal details and download the resulting row.
+7. Confirm all-zero components score 0, all-100 score 100, and all-50 score 50.
+8. Review Indonesia and Vietnam model notes under **Methodology and Transparency**.
+9. Submit the feedback form and confirm the `Feedback` sheet and email notification.

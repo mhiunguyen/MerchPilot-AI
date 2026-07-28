@@ -3,16 +3,24 @@ from __future__ import annotations
 import html
 import logging
 import math
+from datetime import date, timedelta
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
+from app_components.ai_benchmark import ai_decision_brief
 from app_components.charts import (
     contribution_frame,
     recommendation_mix,
     score_band_summary,
     show_image_chart,
+)
+from app_components.decision_log import (
+    append_decision,
+    decision_csv_bytes,
+    make_decision_row,
+    validate_decision,
 )
 from app_components.data_loader import (
     DataValidationError,
@@ -45,6 +53,7 @@ from app_components.recommendation_ui import (
     illustrative_tier,
     score_contributions,
 )
+from app_components.persistence import deliver_record, google_sheets_config
 from app_components.styles import APP_CSS
 
 
@@ -69,6 +78,7 @@ PAGES = [
     "Executive Overview",
     "Product Prioritization",
     "Product Explanation",
+    "Decision Log",
     "What-if Score Explorer",
     "Methodology and Transparency",
     "User Feedback",
@@ -84,6 +94,7 @@ PAGE_SUBTITLES = {
     "Executive Overview": "A normalized portfolio view for fast merchandising triage.",
     "Product Prioritization": "Filter and rank listings within their market context.",
     "Product Explanation": "Audit the evidence behind one product recommendation.",
+    "Decision Log": "Accept, override, or defer a recommendation and preserve the learning record.",
     "What-if Score Explorer": "Explore the transparent score mechanics—not future outcomes.",
     "Methodology and Transparency": "Understand the data, scoring logic, evaluation, and limits.",
     "User Feedback": "Help us evaluate usefulness, clarity, trust, and navigation.",
@@ -98,6 +109,11 @@ def navigate(page: str) -> None:
 def open_product_explanation(product_key: str) -> None:
     st.session_state.selected_product_key = product_key
     navigate("Product Explanation")
+
+
+def open_decision_log(product_key: str) -> None:
+    st.session_state.selected_product_key = product_key
+    navigate("Decision Log")
 
 
 def sync_navigation() -> None:
@@ -131,7 +147,7 @@ def render_footer() -> None:
     st.markdown(
         """
         <div class="mp-footer">
-          <strong>MerchPilot AI</strong> · Explainable Product Opportunity and Promotion Prioritization<br>
+          <strong>MerchPilot AI</strong> · Built by Team YOUNGHTT<br>
           Human review remains part of every decision. Scores are peer-relative and use precomputed marketplace signals.
         </div>
         """,
@@ -165,25 +181,36 @@ def metric_cards(items: list[tuple[str, str]]) -> None:
     st.markdown(f'<div class="mp-metric-grid">{markup}</div>', unsafe_allow_html=True)
 
 
-GUIDED_TASKS = [
-    "Find the five highest-priority products in Vietnam.",
-    "Explain why one Indonesian product is labeled Protect Hero SKU.",
-    "Find a deeply discounted product that may require efficiency review.",
-    "Use the What-if Score Explorer and identify which component changes the score most.",
-    "Submit feedback.",
+DEMO_STEPS = [
+    ("demo_step_prioritization", "Open the product priority queue"),
+    ("demo_step_explanation", "Review an AI-assisted product explanation"),
+    ("demo_step_decision", "Accept or override a recommendation"),
+    ("demo_step_feedback", "Submit prototype feedback"),
 ]
 
 
-def guided_test_panel() -> None:
-    with st.sidebar.expander("Guided test · 5 tasks", expanded=False):
-        if not st.session_state.get("guided_test_started", False):
-            st.caption("Start from Home to track the five evaluation tasks in this session.")
+def mark_demo_step(key: str) -> None:
+    if st.session_state.get("demo_guide_started", False):
+        st.session_state[key] = True
+
+
+def start_demo_guide() -> None:
+    st.session_state.demo_guide_started = True
+    navigate("Product Prioritization")
+
+
+def demo_guide_panel() -> None:
+    with st.sidebar.expander("Demo Guide · 4 steps", expanded=False):
+        if not st.session_state.get("demo_guide_started", False):
+            st.caption("Start from Home. Progress updates automatically in this browser session.")
         completed = sum(
-            bool(st.session_state.get(f"guided_task_{index}", False))
-            for index in range(1, len(GUIDED_TASKS) + 1)
+            bool(st.session_state.get(key, False))
+            for key, _ in DEMO_STEPS
         )
-        st.progress(completed / len(GUIDED_TASKS))
-        st.caption(f"{completed} of {len(GUIDED_TASKS)} tasks completed in this session")
+        st.progress(completed / len(DEMO_STEPS))
+        for key, label in DEMO_STEPS:
+            icon = "✓" if st.session_state.get(key, False) else "○"
+            st.caption(f"{icon} {label}")
 
 
 def render_shell() -> None:
@@ -208,7 +235,7 @@ def render_shell() -> None:
             label_visibility="collapsed",
         )
         st.divider()
-        guided_test_panel()
+        demo_guide_panel()
         st.caption("Decision-support prototype · Precomputed outputs only")
 
 
@@ -282,6 +309,7 @@ def home_page(products: pd.DataFrame) -> None:
               · {html.escape(str(top_product["shop_name"]))}</p><br>
               <span class="mp-badge mp-badge-lime">{html.escape(str(top_product["recommendation_label"]))}</span>
               <span class="mp-badge mp-badge-violet">{html.escape(str(top_product["confidence_level"]))} confidence</span>
+              <span class="mp-badge mp-badge-teal">AI: {html.escape(str(top_product["ai_benchmark_signal"]))}</span>
               <div class="mp-score">{top_product["opportunity_score"]:.2f}<small> / 100</small></div>
               {reasons}
             </div>
@@ -294,9 +322,9 @@ def home_page(products: pd.DataFrame) -> None:
             <div class="mp-card mp-dark-card">
               <span class="mp-kicker" style="color:#c9ff4a">THE OPERATING IDEA</span>
               <h3>From signal overload to a review queue</h3>
-              <p>The score combines six documented peer-relative components. The recommendation
-              layer then translates those signals into a practical review category and three
-              business-language reasons. A merchandiser—not the system—decides what happens next.</p>
+              <p>The transparent score is paired with a shop-grouped, cross-validated contextual
+              benchmark. The recommendation layer translates both into a review category and
+              auditable reasons. A merchandiser—not the system—decides what happens next.</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -348,23 +376,19 @@ def home_page(products: pd.DataFrame) -> None:
     render_boundary()
 
     section_header(
-        "Guided Test",
-        "A five-task evaluation flow for judges, mentors, and test users. Progress stays in this browser session.",
+        "Demo Guide",
+        "A four-step walkthrough for judges and test users. Progress updates automatically in this browser session.",
     )
-    if st.button(
-        "Start Guided Test",
+    st.button(
+        "Start Demo Guide",
         type="primary",
-        disabled=st.session_state.get("guided_test_started", False),
-    ):
-        st.session_state.guided_test_started = True
-        st.rerun()
-    if st.session_state.get("guided_test_started", False):
-        completed = 0
-        for index, task in enumerate(GUIDED_TASKS, start=1):
-            if st.checkbox(f"Task {index} · {task}", key=f"guided_task_{index}"):
-                completed += 1
-        st.progress(completed / len(GUIDED_TASKS))
-        st.caption(f"{completed} of {len(GUIDED_TASKS)} guided tasks completed.")
+        disabled=st.session_state.get("demo_guide_started", False),
+        on_click=start_demo_guide,
+    )
+    if st.session_state.get("demo_guide_started", False):
+        for index, (key, label) in enumerate(DEMO_STEPS, start=1):
+            icon = "✓" if st.session_state.get(key, False) else "○"
+            st.markdown(f"**{icon} Step {index}:** {label}")
 
 
 def executive_page(products: pd.DataFrame, charts: dict[str, Path]) -> None:
@@ -472,6 +496,7 @@ def _multiselect_all(label: str, options: list, key: str) -> list:
 
 
 def prioritization_page(products: pd.DataFrame) -> None:
+    mark_demo_step("demo_step_prioritization")
     page_header("Product Prioritization")
     st.caption("Open the filter panel to define a market-specific review context.")
 
@@ -715,6 +740,7 @@ def prioritization_page(products: pd.DataFrame) -> None:
 
 
 def product_explanation_page(products: pd.DataFrame) -> None:
+    mark_demo_step("demo_step_explanation")
     page_header("Product Explanation")
     countries = ["id", "vn"]
     remembered = st.session_state.get("selected_product_key")
@@ -824,6 +850,48 @@ def product_explanation_page(products: pd.DataFrame) -> None:
     for index, (label, value) in enumerate(peer_metrics):
         cols[index % 3].metric(label, value)
 
+    section_header(
+        "AI-assisted contextual benchmark",
+        "A shop-grouped, cross-validated model estimates the sold-value level associated with the current listing context. It is not a future-sales forecast.",
+    )
+    expected = product.get("ai_contextual_sold_benchmark")
+    observed = product.get("monthly_sold_value")
+    gap = product.get("ai_benchmark_gap_pct")
+    model_confidence = str(product.get("ai_model_confidence", "Unavailable"))
+    benchmark_metrics = st.columns(4)
+    benchmark_metrics[0].metric(
+        "Model benchmark",
+        format_number(expected, 1),
+        help="Cross-validated contextual sold-value proxy estimate.",
+    )
+    benchmark_metrics[1].metric("Observed proxy", format_number(observed, 1))
+    benchmark_metrics[2].metric(
+        "Observed gap",
+        "Not available" if gap is None or pd.isna(gap) else f"{float(gap):+.0%}",
+    )
+    benchmark_metrics[3].metric("Model confidence", model_confidence)
+    signal_class = "mp-badge-teal" if model_confidence == "High" else "mp-badge-orange"
+    st.markdown(
+        f"""
+        <div class="mp-card">
+          <span class="mp-kicker">AI DECISION BRIEF</span><br>
+          <span class="mp-badge {signal_class}">{html.escape(str(product.get("ai_benchmark_signal", "Unavailable")))}</span>
+          <span class="mp-badge">{html.escape(model_confidence)} model confidence</span>
+          <p style="margin-top:1rem">{html.escape(ai_decision_brief(product))}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    local_drivers = product.get("ai_local_drivers")
+    if local_drivers is not None and not pd.isna(local_drivers):
+        with st.expander("Model contribution detail for this representative product"):
+            for driver in str(local_drivers).split(" | "):
+                st.markdown(f"- {driver}")
+    if country == "vn":
+        st.warning(
+            "Vietnam actionable-model ranking quality is limited. Treat this benchmark as supporting evidence only; transparent scoring and human review take priority."
+        )
+
     section_header("Why this recommendation?")
     for reason_name in ("reason_1", "reason_2", "reason_3"):
         reason = product.get(reason_name)
@@ -837,6 +905,12 @@ def product_explanation_page(products: pd.DataFrame) -> None:
         + "".join(f"<div class='mp-reason'>{html.escape(item)}</div>" for item in guidance)
         + "<p style='margin-top:1rem'>These are review prompts, not mandatory actions or outcome guarantees.</p></div>",
         unsafe_allow_html=True,
+    )
+    st.button(
+        "Record decision →",
+        type="primary",
+        on_click=open_decision_log,
+        args=(selected_key,),
     )
 
     export_fields = {
@@ -859,6 +933,141 @@ def product_explanation_page(products: pd.DataFrame) -> None:
         f"merchpilot_product_{product['item_id']}.csv",
         "text/csv",
     )
+    render_boundary()
+
+
+def decision_log_page(products: pd.DataFrame) -> None:
+    page_header("Decision Log")
+    remembered = st.session_state.get("selected_product_key")
+    if remembered and products["product_key"].eq(remembered).any():
+        default_key = remembered
+    else:
+        default_key = products.sort_values("opportunity_score", ascending=False).iloc[0]["product_key"]
+    product_keys = products["product_key"].tolist()
+    selected_key = st.selectbox(
+        "Product decision record",
+        product_keys,
+        index=product_keys.index(default_key),
+        format_func=lambda key: (
+            f"{products.loc[products['product_key'].eq(key), 'country_code'].iloc[0].upper()} · "
+            f"{products.loc[products['product_key'].eq(key), 'item_id'].iloc[0]} · "
+            f"{str(products.loc[products['product_key'].eq(key), 'product_name'].iloc[0])[:95]}"
+        ),
+        key="decision_product_key",
+    )
+    product = products[products["product_key"].eq(selected_key)].iloc[0]
+    st.session_state.selected_product_key = selected_key
+
+    st.markdown(
+        f"""
+        <div class="mp-preview">
+          <span class="mp-kicker">HUMAN DECISION RECORD</span>
+          <h2>{html.escape(str(product["product_name"]))}</h2>
+          <p>{html.escape(str(product["shop_name"]))} · Item {html.escape(str(product["item_id"]))}</p><br>
+          <span class="mp-badge mp-badge-lime">{html.escape(str(product["recommendation_label"]))}</span>
+          <span class="mp-badge">{product["opportunity_score"]:.2f} opportunity score</span>
+          <span class="mp-badge">{html.escape(str(product.get("ai_benchmark_signal", "Benchmark unavailable")))}</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    webhook_url, webhook_token = google_sheets_config()
+    if webhook_url:
+        st.success("Decision persistence is connected to Team YOUNGHTT's Google Sheet.")
+    else:
+        st.info(
+            "Google Sheets is not configured yet. Local runs append to outputs/mvp_decision_log.csv; public submissions remain downloadable until the webhook is added."
+        )
+
+    with st.form("decision_log_form", clear_on_submit=False):
+        cols = st.columns(2)
+        reviewer_role = cols[0].selectbox(
+            "Reviewer role *",
+            ["", "Merchandiser", "Category manager", "Commercial lead", "Judge or mentor", "Other"],
+        )
+        reviewer_name = cols[1].text_input("Reviewer name (optional)")
+        decision_status = st.radio(
+            "Decision *",
+            ["", "Accept recommendation", "Override recommendation", "Need more evidence"],
+            horizontal=True,
+        )
+        selected_action = st.selectbox(
+            "Action *",
+            [
+                "",
+                "Protect current execution",
+                "Review price",
+                "Review discount efficiency",
+                "Inspect conversion friction",
+                "Prepare controlled promotion test",
+                "Maintain and monitor",
+                "Deprioritize immediate action",
+                "Other",
+            ],
+        )
+        decision_rationale = st.text_area(
+            "Decision rationale *",
+            placeholder="What evidence supports this decision, and why are you accepting or overriding the recommendation?",
+        )
+        success_metric = st.text_input(
+            "Success metric *",
+            value="Peer-relative sold-value and engagement change",
+        )
+        review_date = st.date_input(
+            "Review date *",
+            value=date.today() + timedelta(days=14),
+            min_value=date.today(),
+        )
+        submitted = st.form_submit_button("Save decision", type="primary")
+
+    if submitted:
+        row = make_decision_row(
+            product,
+            {
+                "reviewer_role": reviewer_role,
+                "reviewer_name": reviewer_name,
+                "decision_status": decision_status,
+                "selected_action": selected_action,
+                "decision_rationale": decision_rationale,
+                "success_metric": success_metric,
+                "review_date": review_date.isoformat(),
+            },
+        )
+        missing = validate_decision(row)
+        if missing:
+            st.error("Please complete every field marked with an asterisk before saving.")
+        else:
+            st.session_state.setdefault("decision_submissions", []).append(row)
+            public_mode = is_public_mode(getattr(st.context, "url", None))
+            local_saved = False
+            if not public_mode:
+                try:
+                    append_decision(row, ROOT / "outputs" / "mvp_decision_log.csv")
+                    local_saved = True
+                except OSError:
+                    logging.exception("Local decision append failed")
+            delivery = deliver_record(
+                "decision",
+                row,
+                webhook_url=webhook_url,
+                webhook_token=webhook_token,
+            )
+            if delivery.delivered:
+                st.success("Decision saved to Team YOUNGHTT's decision log.")
+            elif local_saved:
+                st.success("Decision appended to the local decision log.")
+            else:
+                st.warning(
+                    "Persistent storage is not configured or unavailable. Download this decision record so it is not lost."
+                )
+                st.download_button(
+                    "Download decision record",
+                    decision_csv_bytes([row]),
+                    f"merchpilot_decision_{product['item_id']}.csv",
+                    "text/csv",
+                )
+            mark_demo_step("demo_step_decision")
     render_boundary()
 
 
@@ -1094,10 +1303,13 @@ def feedback_page() -> None:
     except Exception:
         current_url = None
     public_mode = is_public_mode(current_url)
-    if public_mode:
+    webhook_url, webhook_token = google_sheets_config()
+    if webhook_url:
+        st.success("Feedback persistence is connected to Team YOUNGHTT's Google Sheet.")
+    elif public_mode:
         st.info(
             "Public-session feedback is temporary because persistent external storage is not configured. "
-            "After submitting, download your CSV row for the evaluation record."
+            "A CSV fallback will be offered only until the Team YOUNGHTT webhook is added."
         )
     else:
         st.success("Local mode: valid submissions append to the local feedback CSV without overwriting prior rows.")
@@ -1117,7 +1329,7 @@ def feedback_page() -> None:
                 "Product shortlist creation",
                 "Recommendation explanation audit",
                 "What-if score exploration",
-                "End-to-end guided test",
+                "End-to-end demo guide",
             ],
         )
         rating_cols = st.columns(4)
@@ -1160,27 +1372,35 @@ def feedback_page() -> None:
         if missing:
             st.error("Please complete every field marked with an asterisk before submitting.")
         else:
-            if "feedback_submissions" not in st.session_state:
-                st.session_state.feedback_submissions = []
-            st.session_state.feedback_submissions.append(row)
-            if public_mode:
-                st.success("Feedback captured for this session. Please download your CSV row below.")
-            else:
+            st.session_state.setdefault("feedback_submissions", []).append(row)
+            local_saved = False
+            if not public_mode:
                 try:
                     append_feedback(row, ROOT / "outputs" / "mvp_user_feedback.csv")
-                    st.success("Thank you—your feedback was appended to the local evaluation file.")
+                    local_saved = True
                 except OSError:
                     logging.exception("Local feedback append failed")
-                    st.warning(
-                        "This environment could not write the local feedback file. "
-                        "Your submission remains available for download below."
-                    )
-            st.download_button(
-                "Download submitted feedback row",
-                feedback_csv_bytes([row]),
-                "merchpilot_feedback_submission.csv",
-                "text/csv",
+            delivery = deliver_record(
+                "feedback",
+                row,
+                webhook_url=webhook_url,
+                webhook_token=webhook_token,
             )
+            if delivery.delivered:
+                st.success("Thank you. Your feedback was submitted to Team YOUNGHTT.")
+            elif local_saved:
+                st.success("Thank you. Your feedback was appended to the local evaluation file.")
+            else:
+                st.warning(
+                    "Persistent storage is not configured or unavailable. Download this feedback row so it is not lost."
+                )
+                st.download_button(
+                    "Download submitted feedback row",
+                    feedback_csv_bytes([row]),
+                    "merchpilot_feedback_submission.csv",
+                    "text/csv",
+                )
+            mark_demo_step("demo_step_feedback")
     render_boundary()
 
 
@@ -1212,6 +1432,8 @@ def main() -> None:
         prioritization_page(products)
     elif page == "Product Explanation":
         product_explanation_page(products)
+    elif page == "Decision Log":
+        decision_log_page(products)
     elif page == "What-if Score Explorer":
         what_if_page()
     elif page == "Methodology and Transparency":

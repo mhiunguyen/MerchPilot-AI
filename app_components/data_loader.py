@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import streamlit as st
+
+from app_components.ai_model import predict_contextual_benchmarks
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,6 +23,7 @@ FILES = {
     "feature_importance": OUTPUTS_DIR / "feature_importance.csv",
     "top_opportunities": OUTPUTS_DIR / "top_opportunities_by_country.csv",
     "score_sensitivity": OUTPUTS_DIR / "score_sensitivity.csv",
+    "ai_model_artifact": OUTPUTS_DIR / "ai_model_artifact.json",
     "data_audit": OUTPUTS_DIR / "data_audit.json",
 }
 
@@ -126,9 +131,14 @@ def _coalesce_column(frame: pd.DataFrame, column: str, candidates: tuple[str, ..
             return
 
 
-def _build_product_view(recommendations: pd.DataFrame, processed: pd.DataFrame) -> pd.DataFrame:
+def _build_product_view(
+    recommendations: pd.DataFrame,
+    processed: pd.DataFrame,
+    ai_benchmarks: pd.DataFrame,
+) -> pd.DataFrame:
     recommendations = _rename_aliases(recommendations)
     processed = _rename_aliases(processed)
+    processed = processed.reset_index(drop=True)
     missing = sorted(REQUIRED_COLUMNS - set(recommendations.columns))
     if missing:
         raise DataValidationError(
@@ -187,6 +197,53 @@ def _build_product_view(recommendations: pd.DataFrame, processed: pd.DataFrame) 
         if column in result:
             result[column] = pd.to_numeric(result[column], errors="coerce")
 
+    benchmark_columns = [
+        "country_code",
+        "shop_id",
+        "item_id",
+        "ai_predicted_log_sold_proxy",
+        "ai_local_drivers",
+    ]
+    benchmarks = ai_benchmarks[
+        [column for column in benchmark_columns if column in ai_benchmarks.columns]
+    ].copy()
+    result = result.merge(
+        benchmarks,
+        on=["country_code", "shop_id", "item_id"],
+        how="left",
+        validate="one_to_one",
+    )
+    result["ai_contextual_sold_benchmark"] = np.expm1(
+        result["ai_predicted_log_sold_proxy"].clip(lower=0, upper=15)
+    )
+    expected = result["ai_contextual_sold_benchmark"].clip(lower=1)
+    result["ai_observed_to_benchmark_ratio"] = result["monthly_sold_value"] / expected
+    result["ai_benchmark_gap_pct"] = (
+        result["monthly_sold_value"] - result["ai_contextual_sold_benchmark"]
+    ) / expected
+    result["ai_model_confidence"] = result["country_code"].map({"id": "High", "vn": "Low"})
+    result.loc[result["ai_contextual_sold_benchmark"].isna(), "ai_model_confidence"] = "Unavailable"
+    result["ai_benchmark_signal"] = "Near contextual benchmark"
+    result.loc[
+        result["ai_observed_to_benchmark_ratio"].lt(0.60),
+        "ai_benchmark_signal",
+    ] = "Below contextual benchmark"
+    result.loc[
+        result["ai_observed_to_benchmark_ratio"].gt(1.50),
+        "ai_benchmark_signal",
+    ] = "Above contextual benchmark"
+    result.loc[
+        result["ai_contextual_sold_benchmark"].isna(),
+        "ai_benchmark_signal",
+    ] = "Benchmark unavailable"
+    result.loc[
+        result["monthly_sold_value"].isna(),
+        "ai_benchmark_signal",
+    ] = "Observed proxy unavailable"
+
+    if "ai_local_drivers" not in result:
+        result["ai_local_drivers"] = pd.NA
+
     if result.duplicated(keys).any():
         raise DataValidationError("The recommendation export contains duplicate product keys.")
     return result
@@ -201,6 +258,7 @@ def validate_assets() -> list[str]:
         "feature_importance",
         "top_opportunities",
         "score_sensitivity",
+        "ai_model_artifact",
     ]
     for name in required_files:
         if not FILES[name].is_file():
@@ -219,7 +277,17 @@ def load_app_data() -> dict[str, Any]:
 
     recommendations = _read_csv(FILES["recommendations"])
     processed = _read_csv(FILES["processed"])
-    products = _build_product_view(recommendations, processed)
+    try:
+        ai_model_artifact = json.loads(FILES["ai_model_artifact"].read_text(encoding="utf-8"))
+    except Exception as exc:
+        logging.exception("Unable to load %s", FILES["ai_model_artifact"])
+        raise DataValidationError("Could not read ai_model_artifact.json.") from exc
+    ai_benchmarks = predict_contextual_benchmarks(processed, ai_model_artifact)
+    products = _build_product_view(
+        recommendations,
+        processed,
+        ai_benchmarks,
+    )
     return {
         "products": products,
         "model_metrics": _read_csv(FILES["model_metrics"]),
@@ -238,4 +306,3 @@ def display_value(value: Any, *, digits: int = 1) -> str:
     if isinstance(value, (int, float)):
         return f"{value:,.{digits}f}"
     return str(value)
-
