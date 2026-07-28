@@ -1082,7 +1082,11 @@ def methodology_page(data: dict) -> None:
 
 def feedback_page() -> None:
     page_header("User Feedback")
-    public_mode = is_public_mode()
+    try:
+        current_url = st.context.url
+    except Exception:
+        current_url = None
+    public_mode = is_public_mode(current_url)
     if public_mode:
         st.info(
             "Public-session feedback is temporary because persistent external storage is not configured. "

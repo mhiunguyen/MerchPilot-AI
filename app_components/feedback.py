@@ -6,6 +6,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import pandas as pd
 
@@ -28,9 +29,19 @@ FEEDBACK_COLUMNS = [
 ]
 
 
-def is_public_mode() -> bool:
+def is_public_mode(current_url: str | None = None) -> bool:
     explicit = os.getenv("MERCHPILOT_PUBLIC_MODE", "").strip().lower()
-    return explicit in {"1", "true", "yes"} or bool(os.getenv("STREAMLIT_SHARING_MODE"))
+    if explicit in {"1", "true", "yes"}:
+        return True
+    local_override = os.getenv("MERCHPILOT_LOCAL_MODE", "").strip().lower()
+    if local_override in {"1", "true", "yes"}:
+        return False
+    if os.getenv("STREAMLIT_SHARING_MODE"):
+        return True
+    if current_url:
+        hostname = (urlparse(current_url).hostname or "").lower()
+        return hostname not in {"", "localhost", "127.0.0.1", "::1"}
+    return False
 
 
 def make_feedback_row(values: dict[str, Any]) -> dict[str, Any]:
@@ -66,4 +77,3 @@ def feedback_csv_bytes(rows: list[dict[str, Any]]) -> bytes:
     stream = io.StringIO()
     frame.to_csv(stream, index=False)
     return stream.getvalue().encode("utf-8-sig")
-
