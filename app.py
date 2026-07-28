@@ -95,6 +95,11 @@ def navigate(page: str) -> None:
     st.session_state.nav_radio = page
 
 
+def open_product_explanation(product_key: str) -> None:
+    st.session_state.selected_product_key = product_key
+    navigate("Product Explanation")
+
+
 def sync_navigation() -> None:
     st.session_state.active_page = st.session_state.nav_radio
 
@@ -700,10 +705,12 @@ def prioritization_page(products: pd.DataFrame) -> None:
         format_func=lambda key: lookup[key],
         label_visibility="collapsed",
     )
-    if st.button("Open product explanation →", type="primary"):
-        st.session_state.selected_product_key = selected_key
-        navigate("Product Explanation")
-        st.rerun()
+    st.button(
+        "Open product explanation →",
+        type="primary",
+        on_click=open_product_explanation,
+        args=(selected_key,),
+    )
     render_boundary()
 
 
