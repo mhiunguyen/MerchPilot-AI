@@ -103,6 +103,13 @@ def t(text: str) -> str:
     return translate(text, st.session_state.get("language", "en"))
 
 
+def confidence_text(value: str, *, model: bool = False) -> str:
+    if st.session_state.get("language") == "vi":
+        label = t("Model confidence") if model else t("Confidence")
+        return f"{label}: {t(str(value))}"
+    return f"{value} {'model confidence' if model else 'confidence'}"
+
+
 def localized_frame(frame: pd.DataFrame) -> pd.DataFrame:
     """Translate display labels without changing the underlying decision data."""
     display = frame.copy()
@@ -355,7 +362,7 @@ def home_page(products: pd.DataFrame) -> None:
               <p><span class="{country_class}">{html.escape(str(top_product["country_name"]))}</span>
               · {html.escape(str(top_product["shop_name"]))}</p><br>
               <span class="mp-badge mp-badge-lime">{html.escape(t(str(top_product["recommendation_label"])))}</span>
-              <span class="mp-badge mp-badge-violet">{html.escape(t(str(top_product["confidence_level"])))} {html.escape(t("confidence"))}</span>
+              <span class="mp-badge mp-badge-violet">{html.escape(confidence_text(str(top_product["confidence_level"])))}</span>
               <span class="mp-badge mp-badge-teal">AI: {html.escape(t(str(top_product["ai_benchmark_signal"])))}</span>
               <div class="mp-score">{top_product["opportunity_score"]:.2f}<small> / 100</small></div>
               {reasons}
@@ -955,7 +962,7 @@ def product_explanation_page(products: pd.DataFrame) -> None:
           <span class="mp-badge {market_badge}">{html.escape(str(product["country_name"]))}</span>
           <span class="mp-badge">{html.escape(str(product["platform_category"]))}</span>
           <span class="mp-badge mp-badge-lime">{html.escape(t(str(product["recommendation_label"])))}</span>
-          <span class="mp-badge mp-badge-violet">{html.escape(t(str(product["confidence_level"])))} {html.escape(t("confidence"))}</span>
+          <span class="mp-badge mp-badge-violet">{html.escape(confidence_text(str(product["confidence_level"])))}</span>
           <div class="mp-score">{product["opportunity_score"]:.2f}<small> {html.escape(t("opportunity score / 100"))}</small></div>
         </div>
         """,
@@ -1021,7 +1028,7 @@ def product_explanation_page(products: pd.DataFrame) -> None:
         <div class="mp-card">
           <span class="mp-kicker">{html.escape(t("AI DECISION BRIEF"))}</span><br>
           <span class="mp-badge {signal_class}">{html.escape(t(str(product.get("ai_benchmark_signal", "Unavailable"))))}</span>
-          <span class="mp-badge">{html.escape(t(model_confidence))} {html.escape(t("model confidence"))}</span>
+          <span class="mp-badge">{html.escape(confidence_text(model_confidence, model=True))}</span>
           <p style="margin-top:1rem">{html.escape(ai_decision_brief(product, st.session_state.get("language", "en")))}</p>
         </div>
         """,
