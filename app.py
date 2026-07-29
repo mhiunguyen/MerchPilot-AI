@@ -102,6 +102,17 @@ PAGES = [
 def t(text: str) -> str:
     return translate(text, st.session_state.get("language", "en"))
 
+
+def localized_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """Translate display labels without changing the underlying decision data."""
+    display = frame.copy()
+    for column in display.select_dtypes(include=["object", "string"]).columns:
+        display[column] = display[column].map(
+            lambda value: t(str(value)) if value is not None and not pd.isna(value) else value
+        )
+    display.columns = [t(str(column)) for column in display.columns]
+    return display
+
 BOUNDARY = (
     "This prototype prioritizes products using observed marketplace signals. "
     "It does not estimate causal promotion lift or forecast transactional demand "
@@ -179,13 +190,13 @@ def render_footer() -> None:
 
 def format_percent(value) -> str:
     if value is None or pd.isna(value):
-        return "Not available"
+        return t("Not available")
     return f"{float(value):.0%}"
 
 
 def format_number(value, digits: int = 0) -> str:
     if value is None or pd.isna(value):
-        return "Not available"
+        return t("Not available")
     return f"{float(value):,.{digits}f}"
 
 
@@ -333,7 +344,7 @@ def home_page(products: pd.DataFrame) -> None:
     with left:
         country_class = "mp-market-id" if top_product["country_code"] == "id" else "mp-market-vn"
         reasons = "".join(
-            f'<div class="mp-reason">{html.escape(str(top_product[name]))}</div>'
+            f'<div class="mp-reason">{html.escape(t(str(top_product[name])))}</div>'
             for name in ("reason_1", "reason_2", "reason_3")
         )
         st.markdown(
@@ -343,9 +354,9 @@ def home_page(products: pd.DataFrame) -> None:
               <h3>{html.escape(str(top_product["product_name"]))}</h3>
               <p><span class="{country_class}">{html.escape(str(top_product["country_name"]))}</span>
               · {html.escape(str(top_product["shop_name"]))}</p><br>
-              <span class="mp-badge mp-badge-lime">{html.escape(str(top_product["recommendation_label"]))}</span>
-              <span class="mp-badge mp-badge-violet">{html.escape(str(top_product["confidence_level"]))} confidence</span>
-              <span class="mp-badge mp-badge-teal">AI: {html.escape(str(top_product["ai_benchmark_signal"]))}</span>
+              <span class="mp-badge mp-badge-lime">{html.escape(t(str(top_product["recommendation_label"])))}</span>
+              <span class="mp-badge mp-badge-violet">{html.escape(t(str(top_product["confidence_level"])))} {html.escape(t("confidence"))}</span>
+              <span class="mp-badge mp-badge-teal">AI: {html.escape(t(str(top_product["ai_benchmark_signal"])))}</span>
               <div class="mp-score">{top_product["opportunity_score"]:.2f}<small> / 100</small></div>
               {reasons}
             </div>
@@ -456,10 +467,31 @@ def executive_page(products: pd.DataFrame, charts: dict[str, Path]) -> None:
     section_header("Portfolio shape", "Normalized opportunity scores and recommendation mix for the selected view.")
     chart_left, chart_right = st.columns(2)
     with chart_left:
-        if market == "All markets":
+        if market == "All markets" and st.session_state.get("language") == "vi":
+            score_chart = products[["country_code", "opportunity_score"]].copy()
+            score_chart["Score band"] = pd.cut(
+                score_chart["opportunity_score"],
+                bins=list(range(0, 105, 5)),
+                include_lowest=True,
+            ).astype(str)
+            score_chart = (
+                score_chart.groupby(["Score band", "country_code"], observed=True)
+                .size()
+                .unstack(fill_value=0)
+                .rename(columns={"id": "Indonesia", "vn": "Vietnam"})
+                .reset_index()
+            )
+            st.bar_chart(
+                localized_frame(score_chart),
+                x=t("Score band"),
+                y=["Indonesia", "Vietnam"],
+                height=360,
+            )
+            st.caption(t("Opportunity score distribution by market. Scores are normalized within local peer groups."))
+        elif market == "All markets":
             show_image_chart(
                 charts["score_distribution"],
-                "Opportunity score distribution by market. Scores are normalized within local peer groups.",
+                t("Opportunity score distribution by market. Scores are normalized within local peer groups."),
             )
         else:
             bins = pd.cut(
@@ -475,30 +507,48 @@ def executive_page(products: pd.DataFrame, charts: dict[str, Path]) -> None:
             # Altair cannot serialize pandas Interval values. String labels
             # keep the market-specific chart stable across library versions.
             histogram["Score band"] = histogram["Score band"].astype(str)
+            histogram_display = localized_frame(histogram)
             st.bar_chart(
-                histogram,
-                x="Score band",
-                y="Listings",
+                histogram_display,
+                x=t("Score band"),
+                y=t("Listings"),
                 color="#8b7cff",
                 height=360,
             )
-            st.caption(f"Opportunity score distribution for {market}; 5-point score bands.")
+            st.caption(t(f"Opportunity score distribution for {market}; 5-point score bands."))
     with chart_right:
-        if market == "All markets":
+        if market == "All markets" and st.session_state.get("language") == "vi":
+            recommendation_chart = (
+                products.groupby(["recommendation_label", "country_code"], observed=True)
+                .size()
+                .unstack(fill_value=0)
+                .rename(columns={"id": "Indonesia", "vn": "Vietnam"})
+                .reset_index()
+                .rename(columns={"recommendation_label": "Recommendation"})
+            )
+            st.bar_chart(
+                localized_frame(recommendation_chart),
+                x=t("Recommendation"),
+                y=["Indonesia", "Vietnam"],
+                height=360,
+            )
+            st.caption(t("Count of listings by recommendation type and market."))
+        elif market == "All markets":
             show_image_chart(
                 charts["recommendation_distribution"],
-                "Count of listings by recommendation type and market.",
+                t("Count of listings by recommendation type and market."),
             )
         else:
             mix = recommendation_mix(view)
+            mix_display = localized_frame(mix)
             st.bar_chart(
-                mix,
-                x="Recommendation",
-                y="Listings",
+                mix_display,
+                x=t("Recommendation"),
+                y=t("Listings"),
                 color="#11b8a5" if code == "id" else "#f28b30",
                 height=360,
             )
-            st.caption(f"Recommendation-label distribution for {market}.")
+            st.caption(t(f"Recommendation-label distribution for {market}."))
 
     table_left, table_right = st.columns(2)
     with table_left:
@@ -506,26 +556,45 @@ def executive_page(products: pd.DataFrame, charts: dict[str, Path]) -> None:
         mix = recommendation_mix(view)
         mix["Share of listings"] = mix["Share"].map(lambda x: f"{x:.1%}")
         st.dataframe(
-            mix[["Recommendation", "Listings", "Share of listings"]],
+            localized_frame(mix[["Recommendation", "Listings", "Share of listings"]]),
             hide_index=True,
             width="stretch",
         )
     with table_right:
         st.markdown(f"#### {t('Score-band summary')}")
-        st.dataframe(score_band_summary(view), hide_index=True, width="stretch")
+        st.dataframe(localized_frame(score_band_summary(view)), hide_index=True, width="stretch")
 
     section_header("Top opportunity products by market")
-    if market == "All markets":
+    if market == "All markets" and st.session_state.get("language") == "vi":
+        top_all = (
+            products.sort_values(["country_code", "opportunity_score"], ascending=[True, False])
+            .groupby("country_code", observed=True)
+            .head(5)[
+                ["country_name", "product_name", "shop_name", "opportunity_score", "recommendation_label"]
+            ]
+            .rename(
+                columns={
+                    "country_name": "Country",
+                    "product_name": "Product",
+                    "shop_name": "Shop",
+                    "opportunity_score": "Opportunity score",
+                    "recommendation_label": "Recommendation",
+                }
+            )
+        )
+        st.dataframe(localized_frame(top_all), hide_index=True, width="stretch")
+        st.caption(t("The highest balanced scores are shown separately for Indonesia and Vietnam."))
+    elif market == "All markets":
         show_image_chart(
             charts["top_opportunities"],
-            "The highest balanced scores are shown separately for Indonesia and Vietnam.",
+            t("The highest balanced scores are shown separately for Indonesia and Vietnam."),
         )
     else:
         top = view.nlargest(10, "opportunity_score")[
             ["product_name", "shop_name", "opportunity_score", "recommendation_label"]
         ].copy()
         top.insert(0, "Rank", range(1, len(top) + 1))
-        st.dataframe(top, hide_index=True, width="stretch")
+        st.dataframe(localized_frame(top), hide_index=True, width="stretch")
 
     section_header("Executive readout")
     insights = [
@@ -536,7 +605,7 @@ def executive_page(products: pd.DataFrame, charts: dict[str, Path]) -> None:
     ]
     st.markdown(
         '<div class="mp-insight">'
-        + "".join(f"<div class='mp-reason'>{html.escape(item)}</div>" for item in insights)
+        + "".join(f"<div class='mp-reason'>{html.escape(t(item))}</div>" for item in insights)
         + "</div>",
         unsafe_allow_html=True,
     )
@@ -545,6 +614,18 @@ def executive_page(products: pd.DataFrame, charts: dict[str, Path]) -> None:
 
 def _multiselect_all(label: str, options: list, key: str) -> list:
     return st.multiselect(label, options, default=options, key=key)
+
+
+def _localized_selectbox(container, label: str, options: list[str], key: str, **kwargs):
+    labels = [t(option) for option in options]
+    current = st.session_state.get(key)
+    if current is not None:
+        for option in options:
+            if current in {option, translate(option, "vi")}:
+                st.session_state[key] = t(option)
+                break
+    selected_label = container.selectbox(t(label), labels, key=key, **kwargs)
+    return options[labels.index(selected_label)]
 
 
 def prioritization_page(products: pd.DataFrame) -> None:
@@ -584,17 +665,19 @@ def prioritization_page(products: pd.DataFrame) -> None:
             t("Recommendation"),
             sorted(scoped["recommendation_label"].dropna().astype(str).unique()),
             key="filter_recommendations",
+            format_func=t,
         )
         confidence_levels = row2[1].multiselect(
             t("Confidence"),
             ["High", "Medium", "Low"],
             key="filter_confidence",
+            format_func=t,
         )
-        promoted_status = row2[2].selectbox(
-            t("Promoted status"), ["All", "Yes", "No"], key="filter_promoted"
+        promoted_status = _localized_selectbox(
+            row2[2], "Promoted status", ["All", "Yes", "No"], "filter_promoted"
         )
-        official_status = row2[2].selectbox(
-            t("Official-shop status"), ["All", "Yes", "No"], key="filter_official"
+        official_status = _localized_selectbox(
+            row2[2], "Official-shop status", ["All", "Yes", "No"], "filter_official"
         )
 
         row3 = st.columns(4)
@@ -645,8 +728,9 @@ def prioritization_page(products: pd.DataFrame) -> None:
         price_range = None
         if len(countries) == 1 and not scoped.empty:
             price_min, price_max = safe_range(scoped["price"])
+            currency = format_local_price(0, countries[0]).split()[0]
             price_range = st.slider(
-                f"Current price · local {format_local_price(0, countries[0]).split()[0]} units",
+                f"{t('Current price')} · {t('local')} {currency} {t('units')}",
                 int(price_min),
                 max(int(price_max), int(price_min) + 1),
                 (int(price_min), max(int(price_max), int(price_min) + 1)),
@@ -673,7 +757,9 @@ def prioritization_page(products: pd.DataFrame) -> None:
     filtered = apply_product_filters(products, filters)
 
     controls = st.columns([2, 1, 1])
-    sort_option = controls[0].selectbox(t("Sort results"), list(SORT_OPTIONS), key="sort_products")
+    sort_option = _localized_selectbox(
+        controls[0], "Sort results", list(SORT_OPTIONS), "sort_products"
+    )
     row_limit = controls[1].selectbox(t("Rows per page"), [25, 50, 100], index=0)
     total_pages = max(1, math.ceil(len(filtered) / row_limit))
     page_number = controls[2].number_input(
@@ -691,7 +777,7 @@ def prioritization_page(products: pd.DataFrame) -> None:
                 "Median score",
                 f"{filtered['opportunity_score'].median():.1f}" if not filtered.empty else "—",
             ),
-            ("Top recommendation", str(top_label)),
+            ("Top recommendation", t(str(top_label))),
             ("Active-review candidates", f"{active_review_count(filtered):,}"),
         ]
     )
@@ -740,22 +826,29 @@ def prioritization_page(products: pd.DataFrame) -> None:
             "confidence_level": "Confidence",
         }
     )
+    table_display = localized_frame(table)
     st.dataframe(
-        table,
+        table_display,
         hide_index=True,
         width="stretch",
         height=min(680, 72 + 35 * len(table)),
         column_config={
-            "Opportunity score": st.column_config.ProgressColumn(
-                "Opportunity score", min_value=0, max_value=100, format="%.2f"
+            t("Opportunity score"): st.column_config.ProgressColumn(
+                t("Opportunity score"), min_value=0, max_value=100, format="%.2f"
             ),
-            "Discount %": st.column_config.NumberColumn("Discount %", format="%.1f%%"),
+            t("Discount %"): st.column_config.NumberColumn(t("Discount %"), format="%.1f%%"),
         },
     )
-    st.caption(
-        f"Showing {start + 1:,}–{start + len(page_view):,} of {len(filtered):,} products. "
-        "Prices are labeled in each listing’s local market units."
-    )
+    if st.session_state.get("language") == "vi":
+        st.caption(
+            f"Đang hiển thị {start + 1:,}–{start + len(page_view):,} trên "
+            f"{len(filtered):,} sản phẩm. {t('Prices are labeled in each listing’s local market units.')}"
+        )
+    else:
+        st.caption(
+            f"Showing {start + 1:,}–{start + len(page_view):,} of {len(filtered):,} products. "
+            "Prices are labeled in each listing’s local market units."
+        )
 
     download = filtered.copy()
     download["market_currency"] = download["country_code"].map({"id": "IDR", "vn": "VND"})
@@ -856,14 +949,14 @@ def product_explanation_page(products: pd.DataFrame) -> None:
     st.markdown(
         f"""
         <div class="mp-preview">
-          <span class="mp-kicker">PRODUCT DECISION RECORD</span>
+          <span class="mp-kicker">{html.escape(t("PRODUCT DECISION RECORD"))}</span>
           <h2>{html.escape(str(product["product_name"]))}</h2>
-          <p>Item {html.escape(str(product["item_id"]))} · {html.escape(str(product["shop_name"]))}</p><br>
+          <p>{html.escape(t("Item"))} {html.escape(str(product["item_id"]))} · {html.escape(str(product["shop_name"]))}</p><br>
           <span class="mp-badge {market_badge}">{html.escape(str(product["country_name"]))}</span>
           <span class="mp-badge">{html.escape(str(product["platform_category"]))}</span>
-          <span class="mp-badge mp-badge-lime">{html.escape(str(product["recommendation_label"]))}</span>
-          <span class="mp-badge mp-badge-violet">{html.escape(str(product["confidence_level"]))} confidence</span>
-          <div class="mp-score">{product["opportunity_score"]:.2f}<small> opportunity score / 100</small></div>
+          <span class="mp-badge mp-badge-lime">{html.escape(t(str(product["recommendation_label"])))}</span>
+          <span class="mp-badge mp-badge-violet">{html.escape(t(str(product["confidence_level"])))} {html.escape(t("confidence"))}</span>
+          <div class="mp-score">{product["opportunity_score"]:.2f}<small> {html.escape(t("opportunity score / 100"))}</small></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -884,7 +977,7 @@ def product_explanation_page(products: pd.DataFrame) -> None:
     ]
     cols = st.columns(5)
     for index, (label, value) in enumerate(metrics):
-        cols[index % 5].metric(t(label), value)
+        cols[index % 5].metric(t(label), t(value) if isinstance(value, str) else value)
 
     section_header(
         "Peer-relative benchmarks",
@@ -914,7 +1007,7 @@ def product_explanation_page(products: pd.DataFrame) -> None:
     benchmark_metrics[0].metric(
         t("Model benchmark"),
         format_number(expected, 1),
-        help="Cross-validated contextual sold-value proxy estimate.",
+        help=t("Cross-validated contextual sold-value proxy estimate."),
     )
     benchmark_metrics[1].metric(t("Observed proxy"), format_number(observed, 1))
     benchmark_metrics[2].metric(
@@ -926,36 +1019,34 @@ def product_explanation_page(products: pd.DataFrame) -> None:
     st.markdown(
         f"""
         <div class="mp-card">
-          <span class="mp-kicker">AI DECISION BRIEF</span><br>
-          <span class="mp-badge {signal_class}">{html.escape(str(product.get("ai_benchmark_signal", "Unavailable")))}</span>
-          <span class="mp-badge">{html.escape(model_confidence)} model confidence</span>
-          <p style="margin-top:1rem">{html.escape(ai_decision_brief(product))}</p>
+          <span class="mp-kicker">{html.escape(t("AI DECISION BRIEF"))}</span><br>
+          <span class="mp-badge {signal_class}">{html.escape(t(str(product.get("ai_benchmark_signal", "Unavailable"))))}</span>
+          <span class="mp-badge">{html.escape(t(model_confidence))} {html.escape(t("model confidence"))}</span>
+          <p style="margin-top:1rem">{html.escape(ai_decision_brief(product, st.session_state.get("language", "en")))}</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
     local_drivers = product.get("ai_local_drivers")
     if local_drivers is not None and not pd.isna(local_drivers):
-        with st.expander("Model contribution detail for this representative product"):
+        with st.expander(t("Model contribution detail for this representative product")):
             for driver in str(local_drivers).split(" | "):
-                st.markdown(f"- {driver}")
+                st.markdown(f"- {t(driver)}")
     if country == "vn":
-        st.warning(
-            "Vietnam actionable-model ranking quality is limited. Treat this benchmark as supporting evidence only; transparent scoring and human review take priority."
-        )
+        st.warning(t("Vietnam actionable-model ranking quality is limited. Treat this benchmark as supporting evidence only; transparent scoring and human review take priority."))
 
     section_header("Why this recommendation")
     for reason_name in ("reason_1", "reason_2", "reason_3"):
         reason = product.get(reason_name)
         if reason is not None and not pd.isna(reason):
-            st.markdown(f'<div class="mp-reason">{html.escape(str(reason))}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="mp-reason">{html.escape(t(str(reason)))}</div>', unsafe_allow_html=True)
 
     section_header("Decision-support guidance")
     guidance = GUIDANCE.get(str(product["recommendation_label"]), ["Review the observed signals with a merchandiser."])
     st.markdown(
         '<div class="mp-card">'
-        + "".join(f"<div class='mp-reason'>{html.escape(item)}</div>" for item in guidance)
-        + "<p style='margin-top:1rem'>These are review prompts, not mandatory actions or outcome guarantees.</p></div>",
+        + "".join(f"<div class='mp-reason'>{html.escape(t(item))}</div>" for item in guidance)
+        + f"<p style='margin-top:1rem'>{html.escape(t('These are review prompts, not mandatory actions or outcome guarantees.'))}</p></div>",
         unsafe_allow_html=True,
     )
     st.button(
@@ -997,7 +1088,7 @@ def decision_log_page(products: pd.DataFrame) -> None:
         default_key = products.sort_values("opportunity_score", ascending=False).iloc[0]["product_key"]
     product_keys = products["product_key"].tolist()
     selected_key = st.selectbox(
-        "Product decision record",
+        t("Product decision record"),
         product_keys,
         index=product_keys.index(default_key),
         format_func=lambda key: (
@@ -1013,12 +1104,12 @@ def decision_log_page(products: pd.DataFrame) -> None:
     st.markdown(
         f"""
         <div class="mp-preview">
-          <span class="mp-kicker">HUMAN DECISION RECORD</span>
+          <span class="mp-kicker">{html.escape(t("HUMAN DECISION RECORD"))}</span>
           <h2>{html.escape(str(product["product_name"]))}</h2>
-          <p>{html.escape(str(product["shop_name"]))} · Item {html.escape(str(product["item_id"]))}</p><br>
-          <span class="mp-badge mp-badge-lime">{html.escape(str(product["recommendation_label"]))}</span>
-          <span class="mp-badge">{product["opportunity_score"]:.2f} opportunity score</span>
-          <span class="mp-badge">{html.escape(str(product.get("ai_benchmark_signal", "Benchmark unavailable")))}</span>
+          <p>{html.escape(str(product["shop_name"]))} · {html.escape(t("Item"))} {html.escape(str(product["item_id"]))}</p><br>
+          <span class="mp-badge mp-badge-lime">{html.escape(t(str(product["recommendation_label"])))}</span>
+          <span class="mp-badge">{product["opportunity_score"]:.2f} {html.escape(t("Opportunity score").lower())}</span>
+          <span class="mp-badge">{html.escape(t(str(product.get("ai_benchmark_signal", "Benchmark unavailable"))))}</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1028,21 +1119,21 @@ def decision_log_page(products: pd.DataFrame) -> None:
     if webhook_url:
         st.success(t("Decision persistence is connected to Team YOUNGHTT's Google Sheet."))
     else:
-        st.info(
-            "Google Sheets is not configured yet. Local runs append to outputs/mvp_decision_log.csv; public submissions remain downloadable until the webhook is added."
-        )
+        st.info(t("Google Sheets is not configured yet. Local runs append to outputs/mvp_decision_log.csv; public submissions remain downloadable until the webhook is added."))
 
     with st.form("decision_log_form", clear_on_submit=False):
         cols = st.columns(2)
         reviewer_role = cols[0].selectbox(
             t("Reviewer role *"),
             ["", "Merchandiser", "Category manager", "Commercial lead", "Judge or mentor", "Other"],
+            format_func=t,
         )
         reviewer_name = cols[1].text_input(t("Reviewer name (optional)"))
         decision_status = st.radio(
             t("Decision *"),
             ["", "Accept recommendation", "Override recommendation", "Need more evidence"],
             horizontal=True,
+            format_func=t,
         )
         selected_action = st.selectbox(
             t("Action *"),
@@ -1057,6 +1148,7 @@ def decision_log_page(products: pd.DataFrame) -> None:
                 "Deprioritize immediate action",
                 "Other",
             ],
+            format_func=t,
         )
         decision_rationale = st.text_area(
             t("Decision rationale *"),
@@ -1108,11 +1200,9 @@ def decision_log_page(products: pd.DataFrame) -> None:
             if delivery.delivered:
                 st.success(t("Decision saved to Team YOUNGHTT's decision log."))
             elif local_saved:
-                st.success("Decision appended to the local decision log.")
+                st.success(t("Decision appended to the local decision log."))
             else:
-                st.warning(
-                    "Persistent storage is not configured or unavailable. Download this decision record so it is not lost."
-                )
+                st.warning(t("Persistent storage is not configured or unavailable. Download this decision record so it is not lost."))
                 st.download_button(
                     t("Download decision record"),
                     decision_csv_bytes([row]),
@@ -1131,21 +1221,21 @@ def _apply_preset(name: str) -> None:
 def what_if_page() -> None:
     page_header("What-if Score Explorer")
     st.markdown(
-        '<div class="mp-warning"><strong>Important:</strong> This simulator demonstrates how the transparent score changes. '
-        "It does not predict causal promotion lift, profit, or future sales.</div>",
+        f'<div class="mp-warning"><strong>{html.escape(t("Important:"))}</strong> '
+        f'{html.escape(t("This simulator demonstrates how the transparent score changes. It does not predict causal promotion lift, profit, or future sales."))}</div>',
         unsafe_allow_html=True,
     )
 
-    st.markdown("#### Component presets")
+    st.markdown(f"#### {t('Component presets')}")
     preset_cols = st.columns(3)
     for column, preset in zip(preset_cols, SCORE_PRESETS):
         column.button(
-            preset,
+            t(preset),
             on_click=_apply_preset,
             args=(preset,),
             width="stretch",
         )
-    st.caption("Presets adjust component sliders only; they do not represent exact real-world outcomes.")
+    st.caption(t("Presets adjust component sliders only; they do not represent exact real-world outcomes."))
 
     for key in SCORE_WEIGHTS:
         if f"whatif_{key}" not in st.session_state:
@@ -1156,11 +1246,11 @@ def what_if_page() -> None:
     for index, key in enumerate(SCORE_WEIGHTS):
         target = slider_left if index % 2 == 0 else slider_right
         components[key] = target.slider(
-            f"{COMPONENT_LABELS[key]} · {SCORE_WEIGHTS[key]:.0%} weight",
+            f"{t(COMPONENT_LABELS[key])} · {SCORE_WEIGHTS[key]:.0%} {t('Weight').lower()}",
             0,
             100,
             key=f"whatif_{key}",
-            help="A normalized component from 0 to 100.",
+            help=t("A normalized component from 0 to 100."),
         )
 
     score = calculate_what_if_score(components)
@@ -1170,36 +1260,44 @@ def what_if_page() -> None:
         st.markdown(
             f"""
             <div class="mp-preview">
-              <span class="mp-kicker">LIVE TRANSPARENT SCORE</span>
+              <span class="mp-kicker">{html.escape(t("LIVE TRANSPARENT SCORE"))}</span>
               <div class="mp-score">{score:.1f}<small> / 100</small></div>
-              <span class="mp-badge mp-badge-violet">Illustrative score interpretation</span>
-              <h3>{illustrative_tier(score)}</h3>
+              <span class="mp-badge mp-badge-violet">{html.escape(t("Illustrative score interpretation"))}</span>
+              <h3>{html.escape(t(illustrative_tier(score)))}</h3>
             </div>
             """,
             unsafe_allow_html=True,
         )
     with result_right:
-        st.bar_chart(contribution_frame(contributions), color="#8b7cff", horizontal=True, height=330)
-        st.caption("Weighted contribution to the final 0–100 score.")
+        st.bar_chart(localized_frame(contribution_frame(contributions)), color="#8b7cff", horizontal=True, height=330)
+        st.caption(t("Weighted contribution to the final 0–100 score."))
 
     ordered = sorted(contributions.items(), key=lambda item: item[1], reverse=True)
     driver_cols = st.columns(2)
     with driver_cols[0]:
-        st.markdown("#### Dominant positive drivers")
+        st.markdown(f"#### {t('Dominant positive drivers')}")
         for name, value in ordered[:2]:
-            st.markdown(f"- {name}: **{value:.1f} points**")
+            st.markdown(f"- {t(name)}: **{value:.1f} {t('points')}**")
     with driver_cols[1]:
-        st.markdown("#### Weak components")
+        st.markdown(f"#### {t('Weak components')}")
         for name, value in ordered[-2:]:
-            st.markdown(f"- {name}: **{value:.1f} points**")
+            st.markdown(f"- {t(name)}: **{value:.1f} {t('points')}**")
 
-    with st.expander("See the exact formula"):
-        st.code(
-            "score = 0.25×engagement + 0.20×sold-value + 0.10×price competitiveness\n"
-            "      + 0.15×promotion efficiency + 0.10×shop credibility\n"
-            "      + 0.20×conversion-gap opportunity",
-            language=None,
-        )
+    with st.expander(t("See the exact formula")):
+        if st.session_state.get("language") == "vi":
+            st.code(
+                "điểm = 0.25×tương_tác + 0.20×giá_trị_bán + 0.10×cạnh_tranh_giá\n"
+                "      + 0.15×hiệu_quả_khuyến_mãi + 0.10×uy_tín_cửa_hàng\n"
+                "      + 0.20×cơ_hội_khoảng_cách_chuyển_đổi",
+                language=None,
+            )
+        else:
+            st.code(
+                "score = 0.25×engagement + 0.20×sold-value + 0.10×price competitiveness\n"
+                "      + 0.15×promotion efficiency + 0.10×shop credibility\n"
+                "      + 0.20×conversion-gap opportunity",
+                language=None,
+            )
     render_boundary()
 
 
@@ -1216,21 +1314,35 @@ def methodology_page(data: dict) -> None:
         ]
     )
     st.markdown(
-        "Five logical table families support the pipeline: products, shop information, platform categories, "
-        "product-category mappings, and shop category lists. **30 exact duplicate rows were removed.**"
+        t(
+            "Five logical table families support the pipeline: products, shop information, platform categories, "
+            "product-category mappings, and shop category lists. **30 exact duplicate rows were removed.**"
+        )
     )
 
     section_header("2 · Data processing")
-    st.markdown(
-        """
-        - Select the latest observed listing per country, shop, and item.
-        - Remove exact duplicate snapshots before ranking.
-        - Join product, shop, and category data with country-aware keys.
-        - Normalize peer signals within **country + platform category**.
-        - Keep IDR and VND as local-market values; never directly compare raw prices.
-        - Preserve the shop-category limitation: only **66.1%** of latest listings map to a shop category.
-        """
-    )
+    if st.session_state.get("language") == "vi":
+        st.markdown(
+            """
+            - Chọn bản ghi mới nhất của từng sản phẩm theo quốc gia, cửa hàng và mã sản phẩm.
+            - Loại bỏ các ảnh chụp dữ liệu trùng lặp hoàn toàn trước khi xếp hạng.
+            - Kết nối dữ liệu sản phẩm, cửa hàng và ngành hàng bằng khóa có xét quốc gia.
+            - Chuẩn hóa tín hiệu nhóm tương đồng trong **quốc gia + ngành hàng nền tảng**.
+            - Giữ IDR và VND theo giá trị thị trường địa phương; không so sánh trực tiếp giá thô.
+            - Giữ nguyên giới hạn ánh xạ ngành hàng cửa hàng: chỉ **66,1%** sản phẩm mới nhất có ngành hàng cửa hàng.
+            """
+        )
+    else:
+        st.markdown(
+            """
+            - Select the latest observed listing per country, shop, and item.
+            - Remove exact duplicate snapshots before ranking.
+            - Join product, shop, and category data with country-aware keys.
+            - Normalize peer signals within **country + platform category**.
+            - Keep IDR and VND as local-market values; never directly compare raw prices.
+            - Preserve the shop-category limitation: only **66.1%** of latest listings map to a shop category.
+            """
+        )
 
     section_header("3 · Transparent scoring")
     weights = pd.DataFrame(
@@ -1240,76 +1352,143 @@ def methodology_page(data: dict) -> None:
         }
     )
     weights["Weight"] = weights["Weight"].map(lambda value: f"{value:.0%}")
-    st.dataframe(weights, hide_index=True, width="stretch")
+    st.dataframe(localized_frame(weights), hide_index=True, width="stretch")
     st.markdown(
-        "The balanced score is the production decision core. All six components are normalized to 0–100 "
-        "and combined with the displayed weights."
+        t(
+            "The balanced score is the production decision core. All six components are normalized to 0–100 "
+            "and combined with the displayed weights."
+        )
     )
 
     section_header("4 · ML-assisted benchmark")
-    st.markdown(
-        """
-        The **actionable-context** experiment excludes historical sold value. The separate
-        **descriptive** experiment includes historical sold value and is explicitly leakage-prone
-        for future prediction. Evaluation groups products by shop using grouped five-fold and
-        leave-one-shop-out validation. ML is an explanatory benchmark—not the production decision layer.
-        """
-    )
+    if st.session_state.get("language") == "vi":
+        st.markdown(
+            """
+            Thử nghiệm **bối cảnh có thể hành động** loại bỏ giá trị bán lịch sử. Thử nghiệm
+            **mô tả** riêng biệt có sử dụng giá trị bán lịch sử và được xác định rõ là có nguy cơ
+            rò rỉ dữ liệu nếu dùng cho dự báo tương lai. Quá trình đánh giá nhóm sản phẩm theo cửa hàng,
+            sử dụng kiểm định chéo năm phần theo nhóm và kiểm định bỏ lần lượt một cửa hàng.
+            ML là đối chuẩn giải thích, không phải lớp ra quyết định chính thức.
+            """
+        )
+    else:
+        st.markdown(
+            """
+            The **actionable-context** experiment excludes historical sold value. The separate
+            **descriptive** experiment includes historical sold value and is explicitly leakage-prone
+            for future prediction. Evaluation groups products by shop using grouped five-fold and
+            leave-one-shop-out validation. ML is an explanatory benchmark—not the production decision layer.
+            """
+        )
 
     section_header("5 · Model results")
     result_cols = st.columns(2)
     with result_cols[0]:
         st.markdown(
-            """
+            f"""
             <div class="mp-card">
-              <span class="mp-badge mp-badge-teal">Indonesia · actionable</span>
-              <h3>Materially stronger than the dummy baseline</h3>
-              <p>Grouped RMSE 1.196 vs 2.212 baseline (45.9% improvement);
+              <span class="mp-badge mp-badge-teal">Indonesia · {html.escape("có thể hành động" if st.session_state.get("language") == "vi" else "actionable")}</span>
+              <h3>{html.escape(t("Materially stronger than the dummy baseline"))}</h3>
+              <p>{"RMSE theo nhóm 1,196 so với đường cơ sở 2,212 (cải thiện 45,9%);" if st.session_state.get("language") == "vi" else "Grouped RMSE 1.196 vs 2.212 baseline (45.9% improvement);"}
               Spearman 0.767; top-decile lift 1.701; NDCG@20 1.000.
-              Leave-one-shop-out Spearman is 0.770.</p>
+              {"Spearman khi bỏ lần lượt một cửa hàng là 0,770." if st.session_state.get("language") == "vi" else "Leave-one-shop-out Spearman is 0.770."}</p>
             </div>
             """,
             unsafe_allow_html=True,
         )
     with result_cols[1]:
         st.markdown(
-            """
+            f"""
             <div class="mp-card">
-              <span class="mp-badge mp-badge-orange">Vietnam · actionable</span>
-              <h3>Limited ranking quality</h3>
-              <p>Grouped RMSE 2.057 vs 2.309 baseline (10.9% improvement);
+              <span class="mp-badge mp-badge-orange">Vietnam · {html.escape("có thể hành động" if st.session_state.get("language") == "vi" else "actionable")}</span>
+              <h3>{html.escape(t("Limited ranking quality"))}</h3>
+              <p>{"RMSE theo nhóm 2,057 so với đường cơ sở 2,309 (cải thiện 10,9%);" if st.session_state.get("language") == "vi" else "Grouped RMSE 2.057 vs 2.309 baseline (10.9% improvement);"}
               Spearman 0.407; top-decile lift 0.734; NDCG@20 0.045.
-              This does not meet the stricter material-improvement rule.</p>
+              {"Kết quả chưa đạt quy tắc cải thiện đáng kể nghiêm ngặt hơn." if st.session_state.get("language") == "vi" else "This does not meet the stricter material-improvement rule."}</p>
             </div>
             """,
             unsafe_allow_html=True,
         )
-    st.info(
-        "Transparent scoring remains the decision core. Vietnam recommendations require stronger human review."
-    )
-    show_image_chart(
-        data["charts"]["model_baseline"],
-        "Actionable benchmark performance relative to the dummy baseline. Metrics are evaluation diagnostics, not outcome guarantees.",
-    )
+    st.info(t("Transparent scoring remains the decision core. Vietnam recommendations require stronger human review."))
+    if st.session_state.get("language") == "vi":
+        model_chart = data["model_metrics"]
+        model_chart = model_chart[
+            model_chart["experiment"].eq("actionable_context")
+            & model_chart["validation_scheme"].eq("group_5_fold")
+        ][["model", "country_code", "rmse_log"]]
+        model_chart = (
+            model_chart.pivot(index="model", columns="country_code", values="rmse_log")
+            .rename(columns={"id": "Indonesia", "vn": "Vietnam"})
+            .reset_index()
+            .rename(columns={"model": "Mô hình"})
+        )
+        st.bar_chart(model_chart, x="Mô hình", y=["Indonesia", "Vietnam"], height=360)
+        st.caption(t("Actionable benchmark performance relative to the dummy baseline. Metrics are evaluation diagnostics, not outcome guarantees."))
+    else:
+        show_image_chart(
+            data["charts"]["model_baseline"],
+            t("Actionable benchmark performance relative to the dummy baseline. Metrics are evaluation diagnostics, not outcome guarantees."),
+        )
 
     section_header("6 · Feature importance")
-    show_image_chart(
-        data["charts"]["feature_importance"],
-        "Global importance from the best actionable models. Importance describes model reliance, not causality.",
-    )
-    st.warning(
-        "Rating volume dominates the model and may partly reflect listing maturity or age, which is not directly observed."
-    )
+    if st.session_state.get("language") == "vi":
+        importance_chart = (
+            data["feature_importance"]
+            .query("experiment == 'actionable_context'")
+            .groupby("feature_label", observed=True)["importance"]
+            .mean()
+            .nlargest(10)
+            .sort_values()
+            .reset_index()
+            .rename(columns={"feature_label": "Đặc trưng", "importance": "Tầm quan trọng"})
+        )
+        importance_chart["Đặc trưng"] = importance_chart["Đặc trưng"].map(t)
+        st.bar_chart(
+            importance_chart,
+            x="Tầm quan trọng",
+            y="Đặc trưng",
+            horizontal=True,
+            height=380,
+        )
+        st.caption(t("Global importance from the best actionable models. Importance describes model reliance, not causality."))
+    else:
+        show_image_chart(
+            data["charts"]["feature_importance"],
+            t("Global importance from the best actionable models. Importance describes model reliance, not causality."),
+        )
+    st.warning(t("Rating volume dominates the model and may partly reflect listing maturity or age, which is not directly observed."))
 
     section_header("7 · Ranking robustness")
-    show_image_chart(
-        data["charts"]["score_sensitivity"],
-        "Top-20 overlap and full-ranking correlation under balanced, growth-opportunity, and hero-protection weights.",
-    )
-    st.markdown(
+    if st.session_state.get("language") == "vi":
+        sensitivity_chart = (
+            data["score_sensitivity"]
+            .pivot(
+                index="configuration",
+                columns="country_code",
+                values="top20_jaccard_vs_balanced",
+            )
+            .rename(columns={"id": "Indonesia", "vn": "Vietnam"})
+            .reset_index()
+        )
+        sensitivity_chart["configuration"] = sensitivity_chart["configuration"].map(
+            {
+                "balanced": t("Balanced product"),
+                "growth_opportunity": t("Growth opportunity"),
+                "hero_protection": t("Hero protection"),
+            }
+        )
+        sensitivity_chart = sensitivity_chart.rename(columns={"configuration": "Cấu hình"})
+        st.bar_chart(sensitivity_chart, x="Cấu hình", y=["Indonesia", "Vietnam"], height=360)
+        st.caption(t("Top-20 overlap and full-ranking correlation under balanced, growth-opportunity, and hero-protection weights."))
+    else:
+        show_image_chart(
+            data["charts"]["score_sensitivity"],
+            t("Top-20 overlap and full-ranking correlation under balanced, growth-opportunity, and hero-protection weights."),
+        )
+    st.markdown(t(
         "Indonesia rankings are more stable. Vietnam’s top rankings are more sensitive to scoring priorities: "
         "top-20 overlap versus balanced falls to 0.538 for growth-opportunity and 0.482 for hero-protection."
-    )
+    ))
 
     section_header("8 · Limitations")
     limitations = [
@@ -1326,7 +1505,7 @@ def methodology_page(data: dict) -> None:
     ]
     st.markdown(
         '<div class="mp-card">'
-        + "".join(f'<span class="mp-badge">{html.escape(item)}</span>' for item in limitations)
+        + "".join(f'<span class="mp-badge">{html.escape(t(item))}</span>' for item in limitations)
         + "</div>",
         unsafe_allow_html=True,
     )
@@ -1341,10 +1520,10 @@ def methodology_page(data: dict) -> None:
     ]
     for column, (stage, content) in zip(roadmap_cols, roadmap):
         column.markdown(
-            f'<div class="mp-card"><span class="mp-kicker">{stage}</span><h3>{content}</h3></div>',
+            f'<div class="mp-card"><span class="mp-kicker">{html.escape(t(stage))}</span><h3>{html.escape(t(content))}</h3></div>',
             unsafe_allow_html=True,
         )
-    st.caption("Roadmap items after Current are proposed future capabilities and are not present in this MVP.")
+    st.caption(t("Roadmap items after Current are proposed future capabilities and are not present in this MVP."))
     render_boundary()
 
 
@@ -1359,12 +1538,12 @@ def feedback_page() -> None:
     if webhook_url:
         st.success(t("Feedback persistence is connected to Team YOUNGHTT's Google Sheet."))
     elif public_mode:
-        st.info(
+        st.info(t(
             "Public-session feedback is temporary because persistent external storage is not configured. "
             "A CSV fallback will be offered only until the Team YOUNGHTT webhook is added."
-        )
+        ))
     else:
-        st.success("Local mode: valid submissions append to the local feedback CSV without overwriting prior rows.")
+        st.success(t("Local mode: valid submissions append to the local feedback CSV without overwriting prior rows."))
     st.caption(t("Feedback is collected only for prototype evaluation. Personal details are optional."))
 
     with st.form("mvp_feedback_form", clear_on_submit=False):
@@ -1372,6 +1551,7 @@ def feedback_page() -> None:
         role = main_cols[0].selectbox(
             t("Participant role *"),
             ["", "Merchandiser", "Category manager", "Analyst", "Product manager", "Judge or mentor", "Other"],
+            format_func=t,
         )
         scenario = main_cols[1].selectbox(
             t("Test scenario completed *"),
@@ -1383,6 +1563,7 @@ def feedback_page() -> None:
                 "What-if score exploration",
                 "End-to-end demo guide",
             ],
+            format_func=t,
         )
         rating_cols = st.columns(4)
         usefulness = rating_cols[0].select_slider(t("Usefulness *"), options=[1, 2, 3, 4, 5], value=3)
@@ -1393,6 +1574,7 @@ def feedback_page() -> None:
             t("Would you use this for product review? *"),
             ["", "Yes", "No"],
             horizontal=True,
+            format_func=t,
         )
         useful_feature = st.text_area(t("Most useful feature *"), height=90)
         confusing = st.text_area(t("Most confusing element *"), height=90)
@@ -1443,11 +1625,9 @@ def feedback_page() -> None:
             if delivery.delivered:
                 st.success(t("Thank you. Your feedback was submitted to Team YOUNGHTT."))
             elif local_saved:
-                st.success("Thank you. Your feedback was appended to the local evaluation file.")
+                st.success(t("Thank you. Your feedback was appended to the local evaluation file."))
             else:
-                st.warning(
-                    "Persistent storage is not configured or unavailable. Download this feedback row so it is not lost."
-                )
+                st.warning(t("Persistent storage is not configured or unavailable. Download this feedback row so it is not lost."))
                 st.download_button(
                     t("Download submitted feedback row"),
                     feedback_csv_bytes([row]),
@@ -1464,16 +1644,16 @@ def main() -> None:
         data = load_app_data()
     except DataValidationError as exc:
         logging.exception("Startup validation failed")
-        st.error(
+        st.error(t(
             "SKUNIVO could not load its precomputed decision outputs. "
             "Please confirm the deployment includes the required outputs and chart files."
-        )
-        with st.expander("Validation detail"):
+        ))
+        with st.expander(t("Validation detail")):
             st.write(str(exc))
         st.stop()
     except Exception:
         logging.exception("Unexpected startup failure")
-        st.error("SKUNIVO encountered an unexpected startup problem. Technical details were logged.")
+        st.error(t("SKUNIVO encountered an unexpected startup problem. Technical details were logged."))
         st.stop()
 
     page = st.session_state.active_page

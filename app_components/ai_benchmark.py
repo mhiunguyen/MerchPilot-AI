@@ -11,10 +11,60 @@ def _percentile(value: Any) -> str:
     return f"the {float(value):.0%}"
 
 
-def ai_decision_brief(product: Mapping[str, Any]) -> str:
+def ai_decision_brief(product: Mapping[str, Any], language: str = "en") -> str:
     """Create a grounded explanation from the cross-validated model benchmark."""
     signal = str(product.get("ai_benchmark_signal", "Benchmark unavailable"))
     confidence = str(product.get("ai_model_confidence", "Unavailable"))
+    if language == "vi":
+        if signal == "Benchmark unavailable":
+            return (
+                "Đối chuẩn có AI hỗ trợ không khả dụng cho sản phẩm này vì thiếu biến mục tiêu "
+                "của mô hình. Hãy sử dụng điểm cơ hội minh bạch và bằng chứng nhóm tương đồng."
+            )
+        if signal == "Observed proxy unavailable":
+            return (
+                "Mô hình có thể ước tính đối chuẩn theo bối cảnh, nhưng thiếu giá trị bán hàng tháng "
+                "đại diện nên không thể tính khoảng cách hiệu năng. Hãy sử dụng điểm cơ hội minh bạch "
+                "và thu thập kết quả còn thiếu trước khi so sánh."
+            )
+        engagement_value = product.get("likes_pct_peer")
+        price_value = product.get("price_pct_country_category")
+        engagement = (
+            "không có dữ liệu"
+            if engagement_value is None or pd.isna(engagement_value)
+            else f"{float(engagement_value):.0%}"
+        )
+        price = (
+            "không có dữ liệu"
+            if price_value is None or pd.isna(price_value)
+            else f"{float(price_value):.0%}"
+        )
+        if signal == "Below contextual benchmark":
+            core = (
+                "Mô hình kiểm định chéo xếp sản phẩm này thấp hơn mức giá trị bán gắn với bối cảnh "
+                f"tương đồng. Tương tác ở {engagement} phân vị nhóm và giá ở {price} phân vị nhóm, "
+                "vì vậy khoảng cách này là tín hiệu cần xem xét trở ngại chuyển đổi."
+            )
+        elif signal == "Above contextual benchmark":
+            core = (
+                "Giá trị bán quan sát được cao hơn đối chuẩn theo bối cảnh của mô hình. Điều này hỗ trợ "
+                f"việc bảo vệ cách triển khai hiện tại, đồng thời theo dõi vị trí tương tác {engagement}."
+            )
+        else:
+            core = (
+                "Giá trị bán quan sát được gần với đối chuẩn theo bối cảnh của mô hình. Mô hình không "
+                "phát hiện khoảng cách hiệu năng lớn, vì vậy điểm minh bạch và bối cảnh kinh doanh nên "
+                "dẫn dắt quá trình xem xét."
+            )
+        if confidence == "Low":
+            core += (
+                " Độ tin cậy của mô hình Việt Nam thấp, vì vậy tín hiệu này không được ghi đè điểm "
+                "minh bạch hoặc phán đoán của con người."
+            )
+        else:
+            core += " Đây là đối chuẩn cắt ngang, không phải dự báo doanh số tương lai."
+        return core
+
     if signal == "Benchmark unavailable":
         return (
             "The AI-assisted benchmark is unavailable for this listing because the modeling "
